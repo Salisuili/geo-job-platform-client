@@ -4,36 +4,7 @@ import { Link } from 'react-router-dom';
 function SignUp() {
   return (
     <div className="bg-light min-vh-100 d-flex flex-column">
-      {/* Header */}
-      <header className="d-flex justify-content-between align-items-center border-bottom px-4 py-3 bg-white shadow-sm">
-        <div className="d-flex align-items-center gap-2 text-dark">
-          <div className="me-2">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 48 48"
-              fill="currentColor"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M6 6H42L36 24L42 42H6L12 24L6 6Z" />
-            </svg>
-          </div>
-          <h2 className="h5 fw-bold mb-0">WorkConnect</h2>
-        </div>
-        <div className="d-flex align-items-center gap-4">
-          <a href="#" className="text-dark text-decoration-none fw-medium">
-            Find Work
-          </a>
-          <a href="#" className="text-dark text-decoration-none fw-medium">
-            Find Workers
-          </a>
-          <Link to="/login" className="btn btn-outline-secondary fw-bold px-4">
-  Login
-</Link>
-
-        </div>
-      </header>
-
+      
       {/* Sign Up Form */}
       <div className="container d-flex flex-grow-1 justify-content-center align-items-center py-5">
         <div className="w-100" style={{ maxWidth: '500px' }}>

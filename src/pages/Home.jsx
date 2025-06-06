@@ -2,8 +2,8 @@ import React from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css'; // Import Bootstrap CSS
 
 // You would need to install react-icons: npm install react-icons
-import { FaSearch, FaChevronDown, FaChevronUp, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
-import { Navbar, Nav, Container, Form, FormControl, Button, Card, Accordion, Row, Col, Pagination as BSPagination } from 'react-bootstrap';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
+import { Container, Form, Button, Card, Accordion, Row, Col, Pagination as BSPagination } from 'react-bootstrap';
 
 function Home() {
   // Dummy job data for display
@@ -39,49 +39,7 @@ function Home() {
   ];
 
   return (
-    <div style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
-      {/* Navbar */}
-      <Navbar bg="white" expand="lg" className="border-bottom py-3">
-        <Container fluid>
-          <Navbar.Brand href="#home" className="d-flex align-items-center">
-            <img
-              src="https://via.placeholder.com/30x30?text=L"
-              alt="Local Labor Logo"
-              className="me-2"
-            />
-            <span className="fw-bold">Local Labor</span>
-          </Navbar.Brand>
-          <Navbar.Toggle aria-controls="basic-navbar-nav" />
-          <Navbar.Collapse id="basic-navbar-nav">
-            <Nav className="me-auto">
-              <Nav.Link href="#home" className="mx-2 active">Home</Nav.Link>
-              <Nav.Link href="#jobs" className="mx-2">Jobs</Nav.Link>
-              <Nav.Link href="#services" className="mx-2">Services</Nav.Link>
-              <Nav.Link href="#about" className="mx-2">About Us</Nav.Link>
-            </Nav>
-            <Form className="d-flex align-items-center mx-3">
-              <div className="position-relative">
-                <FormControl
-                  type="search"
-                  placeholder="Search"
-                  className="me-2 ps-4"
-                  aria-label="Search"
-                  style={{ borderRadius: '0.375rem', backgroundColor: '#f0f2f5', border: 'none' }}
-                />
-                <FaSearch className="position-absolute" style={{ left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#6c757d' }} />
-              </div>
-            </Form>
-            <Button variant="primary" className="me-2 px-4 py-2" style={{ backgroundColor: '#0d6efd', borderColor: '#0d6efd' }}>
-              Post a Job
-            </Button>
-            <img
-              src="https://via.placeholder.com/40x40?text=P"
-              alt="Profile"
-              className="rounded-circle"
-            />
-          </Navbar.Collapse>
-        </Container>
-      </Navbar>
+    <div style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>   
 
       {/* Main Content */}
       <Container fluid className="my-4">

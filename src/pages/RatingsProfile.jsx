@@ -72,31 +72,7 @@ function RatingsProfile() {
 
   return (
     <div style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
-      {/* Navbar */}
-      <Navbar bg="white" expand="lg" className="border-bottom py-3">
-        <Container>
-          <Navbar.Brand href="#home" className="d-flex align-items-center">
-            <img
-              src="https://via.placeholder.com/24x24?text=L" // Placeholder for LaborLink logo
-              alt="LaborLink Logo"
-              className="me-2"
-            />
-            <span className="fw-bold">LaborLink</span>
-          </Navbar.Brand>
-          <Nav className="ms-auto">
-            <Nav.Link href="#findwork" className="mx-2">Find Work</Nav.Link>
-            <Nav.Link href="#myjobs" className="mx-2">My Jobs</Nav.Link>
-            <Nav.Link href="#messages" className="mx-2">Messages</Nav.Link>
-            <Nav.Link href="#notifications" className="mx-2">
-              <FaBell style={{ fontSize: '1.2rem', color: '#6c757d' }} />
-            </Nav.Link>
-            <Nav.Link href="#profile" className="mx-2">
-              <FaUserCircle style={{ fontSize: '1.5rem', color: '#6c757d' }} />
-            </Nav.Link>
-          </Nav>
-        </Container>
-      </Navbar>
-
+      
       {/* Main Content */}
       <Container className="my-4">
         <Row className="justify-content-center">
