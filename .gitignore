@@ -1,5 +1,4 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-# mongodb+srv://geo-enabled:geo-enabled@cluster0.o9dvg5y.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
 # dependencies
 /node_modules
 /.pnp

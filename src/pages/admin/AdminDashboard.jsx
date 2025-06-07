@@ -1,149 +1,211 @@
-import React from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css'; // Import Bootstrap CSS
-
-// Import icons from react-icons. Ensure you have installed 'react-icons'
-import { FaHome, FaUsers, FaBriefcase, FaChartBar, FaCog } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext';
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 // Import Bootstrap components
 import {
   Container,
   Row,
   Col,
-  Nav,
   Card,
   Table,
   Button,
 } from 'react-bootstrap';
 
 function AdminDashboard() {
-  // Dummy data for overview statistics
-  const overviewStats = {
-    totalUsers: '1,234',
-    totalJobs: '567',
-    activeJobs: '345',
-  };
+  const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
+  const navigate = useNavigate();
 
-  // Dummy data for recent activity table
-  const recentActivity = [
-    { id: 1, user: 'Ethan Harper', role: 'Laborer', jobsPosted: 10, jobsCompleted: 8 },
-    { id: 2, user: 'Olivia Bennett', role: 'Employer', jobsPosted: 5, jobsCompleted: 5 },
-    { id: 3, user: 'Noah Carter', role: 'Laborer', jobsPosted: 7, jobsCompleted: 6 },
-    { id: 4, user: 'Ava Mitchell', role: 'Employer', jobsPosted: 3, jobsCompleted: 3 },
-    { id: 5, user: 'Liam Foster', role: 'Laborer', jobsPosted: 12, jobsCompleted: 10 },
-  ];
+  const [totalUsers, setTotalUsers] = useState('...');
+  const [totalJobs, setTotalJobs] = useState('...');
+  const [activeJobs, setActiveJobs] = useState('...');
+  const [recentUsers, setRecentUsers] = useState([]);
+  const [loadingData, setLoadingData] = useState(true);
+  const [error, setError] = useState('');
 
+  // Define the data fetching function inside useEffect
+  useEffect(() => {
+    if (authLoading) {
+      console.log("AdminDashboard: Authentication context is still loading.");
+      return;
+    }
+
+    if (!user || !user.token) {
+        console.error("AdminDashboard: User object or token is missing after auth loading. Redirecting.");
+        logout();
+        navigate('/login');
+        return;
+    }
+
+    const userToken = user.token; // Correctly get the token from user object
+
+    const fetchAdminData = async () => {
+      setLoadingData(true);
+      setError('');
+      try {
+        // Fetch Users
+        const usersResponse = await fetch('http://localhost:5000/api/users', {
+          headers: {
+            'Authorization': `Bearer ${userToken}`
+          }
+        });
+
+        const usersData = await usersResponse.json();
+
+        if (!usersResponse.ok) {
+          if (usersResponse.status === 401 || usersResponse.status === 403) {
+            console.error("AdminDashboard: User fetch unauthorized/forbidden from API. Logging out.");
+            logout();
+            navigate('/login');
+            return;
+          }
+          throw new Error(usersData.message || 'Failed to fetch users');
+        }
+        setTotalUsers(usersData.length.toLocaleString());
+        setRecentUsers(usersData.slice(0, 10));
+
+        // Fetch Jobs
+        const jobsResponse = await fetch('http://localhost:5000/api/jobs', {
+          headers: {
+            'Authorization': `Bearer ${userToken}`
+          }
+        });
+        const jobsData = await jobsResponse.json();
+
+        if (!jobsResponse.ok) {
+           if (jobsResponse.status === 401 || jobsResponse.status === 403) {
+            console.error("AdminDashboard: Job fetch unauthorized/forbidden from API. Logging out.");
+            logout();
+            navigate('/login');
+            return;
+          }
+          throw new Error(jobsData.message || 'Failed to fetch jobs');
+        }
+        setTotalJobs(jobsData.length.toLocaleString());
+        const activeCount = jobsData.filter(job => job.status === 'Active').length;
+        setActiveJobs(activeCount.toLocaleString());
+
+      } catch (err) {
+        console.error('Error fetching admin data:', err);
+        setError(err.message || 'Failed to load dashboard data.');
+      } finally {
+        setLoadingData(false);
+      }
+    };
+
+    if (user && user.token && !authLoading) {
+        fetchAdminData();
+    }
+
+  }, [user, authLoading, navigate, logout]); // Dependencies for useEffect
+
+
+  // --- ADD THIS FUNCTION HERE ---
   const handleViewAction = (userId) => {
-    // In a real application, this would navigate to a detailed user/job view
     console.log(`View action clicked for user ID: ${userId}`);
+    // You would typically navigate to a user details page here, e.g.:
+    // navigate(`/admin/users/${userId}`);
     alert(`Navigating to details for user ID: ${userId}`);
   };
+  // --- END OF ADDED FUNCTION ---
 
+
+  // Render a loading state if authentication is still processing or if data is loading
+  if (authLoading || !user || user.user_type !== 'admin') {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '100vh' }}>
+        <p>Loading admin panel...</p>
+      </div>
+    );
+  }
+
+  // Once loading is done and user is confirmed admin by PrivateRoute
   return (
     <div style={{ backgroundColor: '#f8f9fa', minHeight: '100vh', display: 'flex' }}>
-      {/* Left Sidebar */}
-      <div style={{
-        width: '250px',
-        backgroundColor: '#fff',
-        borderRight: '1px solid #e9ecef',
-        padding: '2rem 1.5rem',
-        flexShrink: 0, // Prevent sidebar from shrinking
-      }}>
-        <div className="mb-4">
-          <h5 className="fw-bold mb-0">Local Labor</h5>
-        </div>
-        <Nav className="flex-column">
-          <Nav.Link href="#dashboard" className="text-dark py-2 d-flex align-items-center"
-            style={{ backgroundColor: '#e9ecef', borderRadius: '0.375rem', fontWeight: 'bold' }}>
-            <FaHome className="me-2" /> Dashboard
-          </Nav.Link>
-          <Nav.Link href="#users" className="text-dark py-2 d-flex align-items-center"
-            style={{ borderRadius: '0.375rem' }}>
-            <FaUsers className="me-2" /> Users
-          </Nav.Link>
-          <Nav.Link href="#jobs" className="text-dark py-2 d-flex align-items-center"
-            style={{ borderRadius: '0.375rem' }}>
-            <FaBriefcase className="me-2" /> Jobs
-          </Nav.Link>
-          <Nav.Link href="#reports" className="text-dark py-2 d-flex align-items-center"
-            style={{ borderRadius: '0.375rem' }}>
-            <FaChartBar className="me-2" /> Reports
-          </Nav.Link>
-          <Nav.Link href="#settings" className="text-dark py-2 d-flex align-items-center"
-            style={{ borderRadius: '0.375rem' }}>
-            <FaCog className="me-2" /> Settings
-          </Nav.Link>
-        </Nav>
-      </div>
 
       {/* Main Content Area */}
       <Container fluid className="py-4 px-5 flex-grow-1">
-        <h3 className="mb-4 fw-bold">Dashboard</h3>
+        <h3 className="mb-4 fw-bold">Admin Dashboard</h3>
+
+        {loadingData && <div className="alert alert-info">Loading dashboard data...</div>}
+        {error && <div className="alert alert-danger">{error}</div>}
 
         {/* Overview Section */}
-        <h5 className="mb-3 fw-bold">Overview</h5>
-        <Row className="mb-4">
-          <Col md={4}>
-            <Card className="shadow-sm border-0 text-center py-4" style={{ backgroundColor: '#fff' }}>
-              <Card.Body>
-                <h6 className="text-muted text-uppercase mb-2" style={{ fontSize: '0.9rem' }}>Total Users</h6>
-                <h2 className="display-4 fw-bold text-primary">{overviewStats.totalUsers}</h2>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col md={4}>
-            <Card className="shadow-sm border-0 text-center py-4" style={{ backgroundColor: '#fff' }}>
-              <Card.Body>
-                <h6 className="text-muted text-uppercase mb-2" style={{ fontSize: '0.9rem' }}>Total Jobs</h6>
-                <h2 className="display-4 fw-bold text-primary">{overviewStats.totalJobs}</h2>
-              </Card.Body>
-            </Card>
-          </Col>
-          <Col md={4}>
-            <Card className="shadow-sm border-0 text-center py-4" style={{ backgroundColor: '#fff' }}>
-              <Card.Body>
-                <h6 className="text-muted text-uppercase mb-2" style={{ fontSize: '0.9rem' }}>Active Jobs</h6>
-                <h2 className="display-4 fw-bold text-primary">{overviewStats.activeJobs}</h2>
-              </Card.Body>
-            </Card>
-          </Col>
-        </Row>
+        {!loadingData && !error && (
+          <>
+            <h5 className="mb-3 fw-bold">Overview</h5>
+            <Row className="mb-4">
+              <Col md={4}>
+                <Card className="shadow-sm border-0 text-center py-4" style={{ backgroundColor: '#fff' }}>
+                  <Card.Body>
+                    <h6 className="text-muted text-uppercase mb-2" style={{ fontSize: '0.9rem' }}>Total Users</h6>
+                    <h2 className="display-4 fw-bold text-primary">{totalUsers}</h2>
+                  </Card.Body>
+                </Card>
+              </Col>
+              <Col md={4}>
+                <Card className="shadow-sm border-0 text-center py-4" style={{ backgroundColor: '#fff' }}>
+                  <Card.Body>
+                    <h6 className="text-muted text-uppercase mb-2" style={{ fontSize: '0.9rem' }}>Total Jobs</h6>
+                    <h2 className="display-4 fw-bold text-primary">{totalJobs}</h2>
+                  </Card.Body>
+                </Card>
+              </Col>
+              <Col md={4}>
+                <Card className="shadow-sm border-0 border-primary text-center py-4" style={{ backgroundColor: '#fff' }}>
+                  <Card.Body>
+                    <h6 className="text-muted text-uppercase mb-2" style={{ fontSize: '0.9rem' }}>Active Jobs</h6>
+                    <h2 className="display-4 fw-bold text-primary">{activeJobs}</h2>
+                  </Card.Body>
+                </Card>
+              </Col>
+            </Row>
 
-        {/* Recent Activity Section */}
-        <h5 className="mb-3 mt-5 fw-bold">Recent Activity</h5>
-        <Card className="shadow-sm border-0">
-          <Card.Body className="p-0"> {/* Remove default padding for table */}
-            <Table responsive hover className="mb-0"> {/* mb-0 to remove bottom margin */}
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Role</th>
-                  <th>Jobs Posted</th>
-                  <th>Jobs Completed</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentActivity.map((activity) => (
-                  <tr key={activity.id}>
-                    <td>{activity.user}</td>
-                    <td>{activity.role}</td>
-                    <td>{activity.jobsPosted}</td>
-                    <td>{activity.jobsCompleted}</td>
-                    <td>
-                      <Button
-                        variant="outline-primary"
-                        size="sm"
-                        onClick={() => handleViewAction(activity.id)}
-                      >
-                        View
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </Card.Body>
-        </Card>
+            {/* Recent Activity Section */}
+            <h5 className="mb-3 mt-5 fw-bold">Recent Users</h5>
+            <Card className="shadow-sm border-0">
+              <Card.Body className="p-0">
+                <Table responsive hover className="mb-0">
+                  <thead>
+                    <tr>
+                      <th>User ID</th>
+                      <th>Username</th>
+                      <th>Email</th>
+                      <th>Role</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentUsers.length > 0 ? (
+                      recentUsers.map((userItem) => (
+                        <tr key={userItem._id}>
+                          <td>{userItem._id}</td>
+                          <td>{userItem.username}</td>
+                          <td>{userItem.email}</td>
+                          <td>{userItem.user_type}</td>
+                          <td>
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              onClick={() => handleViewAction(userItem._id)} // This line calls handleViewAction
+                            >
+                              View
+                            </Button>
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan="5" className="text-center py-3">No recent users found.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </Table>
+              </Card.Body>
+            </Card>
+          </>
+        )}
       </Container>
     </div>
   );

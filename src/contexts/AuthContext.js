@@ -1,54 +1,63 @@
-// src/contexts/AuthContext.js
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
 
-const AuthContext = createContext(null);
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  // In a real app, you'd check localStorage for a token,
-  // or make an API call to verify session on app load.
-  const [user, setUser] = useState(null); // null if not logged in, object if logged in
-  const [loading, setLoading] = useState(true); // To indicate if auth check is in progress
-
-  useEffect(() => {
-    // Simulate checking for a logged-in user (e.g., from a token in localStorage)
-    const storedUser = JSON.parse(localStorage.getItem('currentUser'));
-    if (storedUser) {
-      setUser(storedUser);
+  
+  const [user, setUser] = useState(() => {
+    try {
+      const storedUser = localStorage.getItem('user');
+      const parsedUser = storedUser ? JSON.parse(storedUser) : null;
+      return parsedUser;
+    } catch (error) {
+      localStorage.removeItem('user'); // Clear corrupted data
+      return null;
     }
-    setLoading(false); // Auth check complete
-  }, []);
+  });
 
-  const login = (userData) => {
-    // In a real app, this would involve sending credentials to backend,
-    // receiving a token/user data, and storing it (e.g., in localStorage).
-    setUser(userData);
-    localStorage.setItem('currentUser', JSON.stringify(userData));
+  const [isAuthenticated, setIsAuthenticated] = useState(!!user);
+  const [loading, setLoading] = useState(user === null);
+  useEffect(() => {
+    setIsAuthenticated(!!user);
+    setLoading(false); 
+  }, [user]); 
+
+  
+  const isAdmin = user?.user_type === 'admin';
+  const isEmployer = user?.user_type === 'employer';
+  const isLaborer = user?.user_type === 'laborer';
+
+  const login = (data) => {
+    if (data && data.token && data._id) {
+      setUser(data); 
+      localStorage.setItem('user', JSON.stringify(data));
+    } else {
+      setUser(null); // Ensure user is null on malformed data
+      localStorage.removeItem('user'); // Clear potentially bad data
+    }
   };
 
   const logout = () => {
-    // In a real app, this might also involve an API call to invalidate session.
-    setUser(null);
-    localStorage.removeItem('currentUser');
+    setUser(null); 
+    localStorage.removeItem('user'); 
   };
 
-  // Helper getters
-  const isAuthenticated = !!user;
-  const isAdmin = user && user.user_type === 'admin';
-  const isEmployer = user && user.user_type === 'employer';
-  const isLaborer = user && user.user_type === 'laborer';
-
-  if (loading) {
-    // You could render a loading spinner here
-    return <div>Loading authentication...</div>;
-  }
+  const authContextValue = {
+    user, 
+    isAuthenticated,
+    loading, 
+    isAdmin,
+    isEmployer,
+    isLaborer,
+    login,
+    logout,
+  };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated, isAdmin, isEmployer, isLaborer, login, logout }}>
+    <AuthContext.Provider value={authContextValue}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
+export const useAuth = () => useContext(AuthContext);
