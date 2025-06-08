@@ -68,7 +68,7 @@ function PublicNavbar() {
             // Show Dashboard link and Logout button if authenticated
             <>
               {/* Optional: Add a link to the user's dashboard based on their role */}
-              {user && user.user_type === 'job_seeker' && (
+              {user && user.user_type === 'laborer' && (
                 <Button as={Link} to="/jobseeker-dashboard" variant="outline-success" className="me-2 px-4 py-2">
                   Job Seeker Dashboard
                 </Button>

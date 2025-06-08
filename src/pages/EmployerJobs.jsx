@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom'; // Added Link for future navigation if needed
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { FaHome, FaBriefcase, FaUsers, FaCreditCard, FaCog } from 'react-icons/fa';
-import { Container, Row, Col, Form, Button, Nav, Card, Badge } from 'react-bootstrap';
-import { useAuth } from '../contexts/AuthContext'; // Import useAuth to get user token and auth state
+// Removed FaHome, FaBriefcase, FaUsers, FaCreditCard, FaCog, Nav, Form as they are handled by EmployerDashboardLayout
+import { Container, Button, Card, Badge, Spinner, Alert } from 'react-bootstrap';
+import { useAuth } from '../contexts/AuthContext'; 
+import EmployerDashboardLayout from '../components/EmployerDashboardLayout'; // Correctly imported
+import defaultJobImage from '../../src/job.avif'; // Assuming this path is correct relative to src/pages/
 
-import defaultJobImage from '../../src/job.avif';
+const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
 
 function EmployerJobs() {
-  // Destructure 'isAuthenticated' and 'loading' from useAuth
   const { user, token, isAuthenticated, loading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
 
   const [postedJobs, setPostedJobs] = useState([]);
-  const [loadingJobs, setLoadingJobs] = useState(true); // Renamed from 'loading' to avoid conflict with authLoading
+  const [loadingJobs, setLoadingJobs] = useState(true); 
   const [error, setError] = useState(null);
 
-  // Helper function to format date to "X days/weeks/months ago"
   const timeAgo = (date) => {
     if (!date) return 'N/A';
     const seconds = Math.floor((new Date() - new Date(date)) / 1000);
@@ -37,32 +37,29 @@ function EmployerJobs() {
 
   useEffect(() => {
     const fetchEmployerJobs = async () => {
-      // --- CRUCIAL FIX: Wait for auth context to finish loading AND ensure user is authenticated with a token ---
       if (authLoading || !isAuthenticated || !token) {
         console.log("EmployerJobs: Authentication state not ready or token missing. Skipping fetch.", { authLoading, isAuthenticated, token });
-        if (!authLoading && !isAuthenticated) { // If auth loading is done and still not authenticated, redirect
-            logout(); // Ensure consistent logout
+        if (!authLoading && !isAuthenticated) {
+            logout(); 
             navigate('/login');
         }
-        setLoadingJobs(false); // Set local loading to false as we're not fetching yet
-        return; // Prevent the fetch call from happening
+        setLoadingJobs(false);
+        return;
       }
 
-      // If we reach here, auth is ready and token is present
-      setLoadingJobs(true); // Start loading state for jobs
-      setError(null); // Clear previous errors
+      setLoadingJobs(true);
+      setError(null);
 
       try {
-        const response = await fetch('http://localhost:5000/api/jobs/my-jobs', {
+        const response = await fetch(`${API_BASE_URL}/api/jobs/my-jobs`, {
           headers: {
-            'Authorization': `Bearer ${token}` // Send the token in the Authorization header
+            'Authorization': `Bearer ${token}`
           }
         });
 
         if (response.status === 401 || response.status === 403) {
-            // Handle unauthorized/forbidden access, e.g., token expired or role mismatch (though PrivateRoute should catch most role issues)
             console.error("EmployerJobs: Unauthorized or Forbidden access. Logging out.");
-            logout(); // Clear token and redirect to login
+            logout();
             navigate('/login');
             return;
         }
@@ -77,36 +74,33 @@ function EmployerJobs() {
         setError(err.message);
         console.error("Failed to fetch employer jobs:", err);
       } finally {
-        setLoadingJobs(false); // Ensure loading state is false after fetch attempt
+        setLoadingJobs(false);
       }
     };
 
     fetchEmployerJobs();
-    // Add authLoading, isAuthenticated to dependencies to re-run when auth state changes
   }, [user, token, isAuthenticated, authLoading, navigate, logout]);
 
 
   const handleViewApplicants = (jobId) => {
     console.log(`View Applicants for Job ID: ${jobId}`);
-    alert(`Navigating to applicants for job ID: ${jobId}`);
-    // In a real app, this would navigate to a page listing applicants for this job
+    navigate(`/employer/jobs/${jobId}/applicants`); // Use navigate for actual routing
   };
 
   const handleEditJob = (jobId) => {
     console.log(`Edit Job ID: ${jobId}`);
-    alert(`Navigating to edit form for job ID: ${jobId}`);
-    // In a real app, this would navigate to the PostJob form pre-filled with job data
+    navigate(`/employer/jobs/${jobId}/edit`); // Use navigate for actual routing
   };
 
   const handleDeleteJob = async (jobId) => {
-    if (!token) { // Ensure token is present before attempting delete
+    if (!token) {
         alert("Not authorized to delete job: Token missing.");
         return;
     }
 
     if (window.confirm(`Are you sure you want to delete job ID: ${jobId}?`)) {
       try {
-        const response = await fetch(`http://localhost:5000/api/jobs/${jobId}`, {
+        const response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -123,7 +117,6 @@ function EmployerJobs() {
           throw new Error(`Failed to delete job: ${response.statusText}`);
         }
 
-        // Remove the deleted job from the state to update UI
         setPostedJobs(prevJobs => prevJobs.filter(job => job._id !== jobId));
         alert(`Job ID ${jobId} deleted successfully.`);
       } catch (err) {
@@ -135,43 +128,37 @@ function EmployerJobs() {
   };
 
   // --- Render based on loading state ---
-  if (authLoading || loadingJobs) { // Check both auth loading and job loading
-    return <p className="text-center mt-5">Loading your jobs...</p>;
+  if (authLoading || loadingJobs) {
+    return (
+        <EmployerDashboardLayout> {/* Wrap loading state for consistent layout */}
+            <Container fluid className="py-4 px-5 text-center flex-grow-1">
+                <Spinner animation="border" role="status" className="mt-5">
+                    <span className="visually-hidden">Loading...</span>
+                </Spinner>
+                <p className="mt-2">Loading your jobs...</p>
+            </Container>
+        </EmployerDashboardLayout>
+    );
   }
 
   if (error) {
-    return <p className="text-danger text-center mt-5">Error loading jobs: {error}</p>;
+    return (
+        <EmployerDashboardLayout> {/* Wrap error state for consistent layout */}
+            <Container fluid className="py-4 px-5 flex-grow-1">
+                <Alert variant="danger" className="mt-5">
+                    <Alert.Heading>Error loading jobs!</Alert.Heading>
+                    <p>{error}</p>
+                </Alert>
+            </Container>
+        </EmployerDashboardLayout>
+    );
   }
 
   // If no jobs posted yet
   if (postedJobs.length === 0) {
     return (
-      <div style={{ backgroundColor: '#f8f9fa', minHeight: '100vh', display: 'flex' }}>
-        {/* Left Sidebar - keep as is */}
-        <div style={{ width: '250px', backgroundColor: '#fff', borderRight: '1px solid #e9ecef', padding: '2rem 1.5rem', flexShrink: 0, }}>
-          <div className="mb-4">
-            <h5 className="fw-bold mb-0">Local Labor</h5>
-            <small className="text-muted">{user?.user_type === 'employer' ? 'Employer' : 'Admin'}</small>
-          </div>
-          <Nav className="flex-column">
-            <Nav.Link href="#dashboard" className="text-dark py-2 d-flex align-items-center" style={{ borderRadius: '0.375rem' }}>
-              <FaHome className="me-2" /> Dashboard
-            </Nav.Link>
-            <Nav.Link href="#jobs" className="text-dark py-2 d-flex align-items-center" style={{ backgroundColor: '#e9ecef', borderRadius: '0.375rem', fontWeight: 'bold' }}>
-              <FaBriefcase className="me-2" /> Jobs
-            </Nav.Link>
-            <Nav.Link href="#laborers" className="text-dark py-2 d-flex align-items-center" style={{ borderRadius: '0.375rem' }}>
-              <FaUsers className="me-2" /> Laborers
-            </Nav.Link>
-            <Nav.Link href="#payments" className="text-dark py-2 d-flex align-items-center" style={{ borderRadius: '0.375rem' }}>
-              <FaCreditCard className="me-2" /> Payments
-            </Nav.Link>
-            <Nav.Link href="#settings" className="text-dark py-2 d-flex align-items-center" style={{ borderRadius: '0.375rem' }}>
-              <FaCog className="me-2" /> Settings
-            </Nav.Link>
-          </Nav>
-        </div>
-
+      // The EmployerDashboardLayout component already provides the outer div and sidebar
+      <EmployerDashboardLayout> 
         {/* Main Content Area - No jobs */}
         <Container fluid className="py-4 px-5 flex-grow-1">
           <h3 className="mb-4 fw-bold">My Posted Jobs</h3>
@@ -182,49 +169,14 @@ function EmployerJobs() {
             </Card.Body>
           </Card>
         </Container>
-      </div>
+      </EmployerDashboardLayout>
     );
   }
 
   // --- Render jobs if loaded and present ---
   return (
-    <div style={{ backgroundColor: '#f8f9fa', minHeight: '100vh', display: 'flex' }}>
-      {/* Left Sidebar */}
-      <div style={{
-        width: '250px',
-        backgroundColor: '#fff',
-        borderRight: '1px solid #e9ecef',
-        padding: '2rem 1.5rem',
-        flexShrink: 0,
-      }}>
-        <div className="mb-4">
-          <h5 className="fw-bold mb-0">Local Labor</h5>
-          <small className="text-muted">{user?.user_type === 'employer' ? 'Employer' : 'Admin'}</small>
-        </div>
-        <Nav className="flex-column">
-          <Nav.Link href="#dashboard" className="text-dark py-2 d-flex align-items-center"
-            style={{ borderRadius: '0.375rem' }}>
-            <FaHome className="me-2" /> Dashboard
-          </Nav.Link>
-          <Nav.Link href="#jobs" className="text-dark py-2 d-flex align-items-center"
-            style={{ backgroundColor: '#e9ecef', borderRadius: '0.375rem', fontWeight: 'bold' }}>
-            <FaBriefcase className="me-2" /> Jobs
-          </Nav.Link>
-          <Nav.Link href="#laborers" className="text-dark py-2 d-flex align-items-center"
-            style={{ borderRadius: '0.375rem' }}>
-            <FaUsers className="me-2" /> Laborers
-          </Nav.Link>
-          <Nav.Link href="#payments" className="text-dark py-2 d-flex align-items-center"
-            style={{ borderRadius: '0.375rem' }}>
-            <FaCreditCard className="me-2" /> Payments
-          </Nav.Link>
-          <Nav.Link href="#settings" className="text-dark py-2 d-flex align-items-center"
-            style={{ borderRadius: '0.375rem' }}>
-            <FaCog className="me-2" /> Settings
-          </Nav.Link>
-        </Nav>
-      </div>
-
+    // Wrap the entire content that needs the dashboard layout
+    <EmployerDashboardLayout>
       {/* Main Content Area */}
       <Container fluid className="py-4 px-5 flex-grow-1">
         <h3 className="mb-4 fw-bold">My Posted Jobs</h3>
@@ -291,7 +243,7 @@ function EmployerJobs() {
             </Card>
           ))}
       </Container>
-    </div>
+    </EmployerDashboardLayout>
   );
 }
 

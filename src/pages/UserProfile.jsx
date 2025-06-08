@@ -14,6 +14,8 @@ import {
   Card,
 } from 'react-bootstrap';
 
+const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
+
 function UserProfile() {
   // Dummy user data mirroring your MongoDB 'users' schema
   // In a real application, this data would be fetched from your backend API

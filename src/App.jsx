@@ -10,12 +10,14 @@ import AdminDashboardLayout from './layouts/AdminDashboardLayout';
 
 import Home from './pages/Home';
 import EmployerJobs from './pages/EmployerJobs';
-import RatingsProfile from './pages/UserProfile';
+import RatingsProfile from './pages/RatingsProfile';
 import PostJob from './pages/PostJob';
 import UserProfile from './pages/UserProfile';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import LoginPage from './pages/Login';
 import SignupPage from './pages/SignUp';
+import EmployerDashboard from './pages/EmployerDashboard';
+import LaborerList from './pages/LaborerList';
 
 const PrivateRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, user, loading } = useAuth(); 
@@ -46,9 +48,12 @@ function AppContent() {
       <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
       <Route path="/login" element={<PublicLayout><LoginPage /></PublicLayout>} />
       <Route path="/signup" element={<PublicLayout><SignupPage /></PublicLayout>} />
-      <Route path="/jobs" element={<PublicLayout><Home /></PublicLayout>} /> {/* <--- CONFIRMED: Home.jsx serves /jobs */}
+      <Route path="/jobs" element={<PublicLayout><Home /></PublicLayout>} /> 
       <Route path="/services" element={<PublicLayout><div>Services Page Content</div></PublicLayout>} />
       <Route path="/about" element={<PublicLayout><div>About Us Page Content</div></PublicLayout>} />
+      <Route path="/ratings" element={<PublicLayout><RatingsProfile /></PublicLayout>} />
+      <Route path="/dashboard" element={<PublicLayout><EmployerDashboard /></PublicLayout>} />
+      <Route path="/laborers" element={<PublicLayout><LaborerList /></PublicLayout>} />
 
       <Route path="/find-work" element={
         <PrivateRoute allowedRoles={['laborer', 'employer']}>
@@ -90,7 +95,6 @@ function AppContent() {
         </PrivateRoute>
       } />
 
-      {/* Admin Routes - wrapped with AdminDashboardLayout */}
       <Route path="/admin/dashboard" element={
         <PrivateRoute allowedRoles={['admin']}>
           <AdminDashboardLayout><AdminDashboard /></AdminDashboardLayout>
@@ -107,7 +111,6 @@ function AppContent() {
         </PrivateRoute>
       } />
 
-      {/* Catch-all for undefined routes */}
       <Route path="*" element={<div>404 Not Found</div>} />
     </Routes>
   );

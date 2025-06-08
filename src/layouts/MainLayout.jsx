@@ -1,10 +1,10 @@
 import React from 'react';
-import AuthenticatedNavbar from '../components/AuthenticatedNavbar'; 
+import PublicNavbar from '../components/PublicNavbar'; 
 
 const MainLayout = ({ children }) => {
   return (
     <>
-      <AuthenticatedNavbar /> 
+      <PublicNavbar /> 
       <main className="container-fluid py-4">
         {children}
       </main>

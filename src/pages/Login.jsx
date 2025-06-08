@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react"; // Add useEffect
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext'; // Assuming AuthContext is in src/contexts
 
+const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
+
 const Login = () => {
   // State for form fields
   const [email, setEmail] = useState('');
@@ -22,7 +24,7 @@ const Login = () => {
       if (user.user_type === 'laborer') {
         navigate('/jobs');
       } else if (user.user_type === 'employer') {
-        navigate('/my-jobs');
+        navigate('/dashboard');
       } else if (user.user_type === 'admin') {
         navigate('/admin/dashboard');
       } else {
@@ -37,7 +39,7 @@ const Login = () => {
     setError(''); // Clear previous errors
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

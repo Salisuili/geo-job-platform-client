@@ -13,6 +13,8 @@ import {
   Nav,
 } from 'react-bootstrap';
 
+const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
+
 function PostJob() {
   const { user, isAuthenticated } = useAuth();
   const navigate = useNavigate();
@@ -86,7 +88,7 @@ function PostJob() {
     console.log("Job Data to Post:", jobData); // For debugging
 
     try {
-      const response = await fetch('http://localhost:5000/api/jobs', {
+      const response = await fetch(`${API_BASE_URL}/api/jobs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

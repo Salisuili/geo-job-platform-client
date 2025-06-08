@@ -13,6 +13,8 @@ import {
   Button,
 } from 'react-bootstrap';
 
+const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
+
 function AdminDashboard() {
   const { user, isAuthenticated, loading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
@@ -32,20 +34,19 @@ function AdminDashboard() {
     }
 
     if (!user || !user.token) {
-        console.error("AdminDashboard: User object or token is missing after auth loading. Redirecting.");
         logout();
         navigate('/login');
         return;
     }
 
-    const userToken = user.token; // Correctly get the token from user object
+    const userToken = user.token; 
 
     const fetchAdminData = async () => {
       setLoadingData(true);
       setError('');
       try {
-        // Fetch Users
-        const usersResponse = await fetch('http://localhost:5000/api/users', {
+        
+        const usersResponse = await fetch(`${API_BASE_URL}/api/users`, {
           headers: {
             'Authorization': `Bearer ${userToken}`
           }
@@ -66,7 +67,7 @@ function AdminDashboard() {
         setRecentUsers(usersData.slice(0, 10));
 
         // Fetch Jobs
-        const jobsResponse = await fetch('http://localhost:5000/api/jobs', {
+        const jobsResponse = await fetch(`${API_BASE_URL}/api/jobs`, {
           headers: {
             'Authorization': `Bearer ${userToken}`
           }
@@ -98,15 +99,13 @@ function AdminDashboard() {
         fetchAdminData();
     }
 
-  }, [user, authLoading, navigate, logout]); // Dependencies for useEffect
+  }, [user, authLoading, navigate, logout]); 
 
 
-  // --- ADD THIS FUNCTION HERE ---
   const handleViewAction = (userId) => {
     console.log(`View action clicked for user ID: ${userId}`);
     // You would typically navigate to a user details page here, e.g.:
     // navigate(`/admin/users/${userId}`);
-    alert(`Navigating to details for user ID: ${userId}`);
   };
   // --- END OF ADDED FUNCTION ---
 

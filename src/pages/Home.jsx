@@ -5,6 +5,7 @@ import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import { Container, Form, Button, Card, Accordion, Row, Col, Pagination as BSPagination } from 'react-bootstrap';
 
 import defaultJobImage from '../job.avif'; 
+const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
 
 function Home() {
   const [jobs, setJobs] = useState([]);
@@ -14,7 +15,7 @@ function Home() {
   useEffect(() => {
     const fetchJobs = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/jobs');
+        const response = await fetch(`${API_BASE_URL}/api/jobs`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
