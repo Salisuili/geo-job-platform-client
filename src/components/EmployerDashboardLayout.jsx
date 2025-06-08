@@ -4,13 +4,14 @@ import { Container, Nav, Button, Offcanvas, Navbar } from 'react-bootstrap';
 import { FaHome, FaBriefcase, FaUsers, FaCreditCard, FaCog, FaSignOutAlt, FaBars } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 
+// Define common sidebar styles as an object to apply consistently
 const sidebarBaseStyles = {
-  width: '300px', 
-  backgroundColor: '#fff', 
-  borderRight: 'none', 
+  width: '300px', // INCREASED WIDTH as requested
+  backgroundColor: '#fff', // Already white, ensuring it stays white
+  borderRight: 'none', // REMOVED BORDER to eliminate potential "grey" line
   padding: '2rem 1.5rem',
   flexShrink: 0,
-  flexDirection: 'column', 
+  flexDirection: 'column', // This will be used with display: flex
 };
 
 function EmployerDashboardLayout({ children }) {
