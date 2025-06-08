@@ -116,7 +116,7 @@ function LaborerList() {
             <Card.Body>
               <h5 className="text-muted">No laborers found at the moment.</h5>
               <p>This could be because no laborers are registered, or due to an access issue. Check console for errors.</p>
-              <Button variant="outline-primary" onClick={() => navigate('/employer/dashboard')}>
+              <Button variant="outline-primary" onClick={() => navigate('/dashboard')}>
                 Go to Dashboard
               </Button>
             </Card.Body>
@@ -154,7 +154,7 @@ function LaborerList() {
                   <Button
                     variant="primary"
                     as={Link}
-                    to={`/laborers/${laborer._id}/ratings`}
+                    to={`/laborers/${laborer._id}`}
                     className="mt-auto"
                   >
                     View Profile & Ratings

@@ -51,7 +51,7 @@ function AppContent() {
       <Route path="/jobs" element={<PublicLayout><Home /></PublicLayout>} /> 
       <Route path="/services" element={<PublicLayout><div>Services Page Content</div></PublicLayout>} />
       <Route path="/about" element={<PublicLayout><div>About Us Page Content</div></PublicLayout>} />
-      <Route path="/ratings" element={<PublicLayout><RatingsProfile /></PublicLayout>} />
+      <Route path="/laborers/:laborerId" element={<RatingsProfile />} />
       <Route path="/dashboard" element={<PublicLayout><EmployerDashboard /></PublicLayout>} />
       <Route path="/laborers" element={<PublicLayout><LaborerList /></PublicLayout>} />
 
