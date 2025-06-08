@@ -1,8 +1,7 @@
-// src/pages/EmployerDashboard.js
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Spinner, Alert, Button } from 'react-bootstrap';
-import { FaBriefcase, FaUsers, FaChartLine } from 'react-icons/fa'; // Added FaBriefcase for jobs count
-import { Link, useNavigate } from 'react-router-dom'; // Import Link
+import { FaBriefcase, FaUsers, FaChartLine } from 'react-icons/fa'; 
+import { Link, useNavigate } from 'react-router-dom'; 
 import EmployerDashboardLayout from '../components/EmployerDashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -16,10 +15,8 @@ function EmployerDashboard() {
   const [loadingJobCount, setLoadingJobCount] = useState(true);
   const [errorJobCount, setErrorJobCount] = useState(null);
 
-  // Effect to fetch the count of posted jobs
   useEffect(() => {
     const fetchJobsCount = async () => {
-      // Don't proceed if auth state is still loading or user isn't authenticated
       if (authLoading || !isAuthenticated || !token) {
         if (!authLoading && !isAuthenticated) {
           logout(); // Clear any stale auth data

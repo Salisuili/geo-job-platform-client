@@ -5,7 +5,7 @@ import { Container, Nav, Button, Offcanvas, Navbar } from 'react-bootstrap';
 import { FaBars, FaSignOutAlt } from 'react-icons/fa'; // Import FaBars and FaSignOutAlt
 import { useAuth } from '../contexts/AuthContext'; // Import auth context
 import AdminSidebarContent from './AdminSidebar'; // Import the AdminSidebar content
-
+ 
 // Define common sidebar styles for consistency
 const adminSidebarBaseStyles = {
   width: '300px', // Set to 300px for consistency with employer dashboard

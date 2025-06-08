@@ -69,8 +69,8 @@ function PublicNavbar() {
             <>
               {/* Optional: Add a link to the user's dashboard based on their role */}
               {user && user.user_type === 'laborer' && (
-                <Button as={Link} to="/jobseeker-dashboard" variant="outline-success" className="me-2 px-4 py-2">
-                  Job Seeker Dashboard
+                <Button as={Link} to="/dashboard" variant="outline-success" className="me-2 px-4 py-2">
+                  Dashboard
                 </Button>
               )}
               {user && user.user_type === 'employer' && (
@@ -79,7 +79,7 @@ function PublicNavbar() {
                 </Button>
               )}
               {user && user.user_type === 'admin' && (
-                <Button as={Link} to="/admin-dashboard" variant="outline-success" className="me-2 px-4 py-2">
+                <Button as={Link} to="/admin/dashboard" variant="outline-success" className="me-2 px-4 py-2">
                   Admin Dashboard
                 </Button>
               )}
