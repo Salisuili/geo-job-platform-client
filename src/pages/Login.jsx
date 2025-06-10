@@ -1,76 +1,59 @@
-import React, { useState, useEffect } from "react"; // Add useEffect
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext'; // Assuming AuthContext is in src/contexts
+import { useAuth } from '../contexts/AuthContext';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
 
 const Login = () => {
-  // State for form fields
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-
-  // State for UI feedback
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { login, user } = useAuth(); // Get login function and user object from AuthContext
-  const navigate = useNavigate(); // For programmatic navigation
+  const { login, isAuthenticated, loading: authLoading, user } = useAuth(); // Keep isAuthenticated, authLoading, user for initial redirect logic
 
-  // Add useEffect to redirect if already logged in (e.g., after refresh)
+  const navigate = useNavigate();
+
   useEffect(() => {
-    // Only redirect if 'user' is already present in AuthContext and not in loading state
-    // (The 'loading' check is handled by AuthContext, so if 'user' exists, it's considered loaded)
-    if (user) {
-      if (user.user_type === 'laborer') {
-        navigate('/jobs');
+    if (!authLoading && isAuthenticated && user) {
+      let redirectTo = '/'; 
+      if (user.user_type === 'admin') {
+        redirectTo = '/admin/dashboard';
       } else if (user.user_type === 'employer') {
-        navigate('/dashboard');
-      } else if (user.user_type === 'admin') {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/'); // Fallback
+        redirectTo = '/my-jobs';
+      } else if (user.user_type === 'laborer') {
+        redirectTo = '/jobs';
       }
+      console.log("Login.jsx useEffect: User already authenticated. Redirecting to:", redirectTo);
+      navigate(redirectTo, { replace: true });
     }
-  }, [user, navigate]); // Depend on 'user' and 'navigate'
+  }, [isAuthenticated, authLoading, user, navigate]); // Depend on isAuthenticated, authLoading, user to trigger on changes
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent default form submission
+    e.preventDefault();
     setLoading(true);
-    setError(''); // Clear previous errors
+    setError('');
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }), // Send email and password
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
+      console.log("Login handleSubmit: API response data:", data);
 
       if (response.ok) {
-        // Login successful
-        login(data); // Call login function from AuthContext to store user info and token
-        alert('Login successful!'); // Consider replacing with a non-blocking toast notification
-
-        if (data.user_type === 'laborer') { // CORRECT: Access data.user_type directly
-          navigate('/jobs');
-        } else if (data.user_type === 'employer') { // CORRECT: Access data.user_type directly
-          navigate('/my-jobs');
-        } else if (data.user_type === 'admin') { // CORRECT: Access data.user_type directly
-          navigate('/admin/dashboard');
-        } else {
-            navigate('/'); // Fallback
-        }
+        login(data);
+        alert('Login successful!'); 
       } else {
-        // Login failed (e.g., invalid credentials)
         setError(data.message || 'Login failed. Please check your credentials.');
       }
     } catch (err) {
       setError('Network error. Please check your connection or server status.');
     } finally {
-      setLoading(false); // End loading
+      setLoading(false);
     }
   };
 
@@ -79,7 +62,7 @@ const Login = () => {
       <main className="flex-grow-1 d-flex justify-content-center align-items-center px-4 py-5">
         <div className="w-100" style={{ maxWidth: "480px" }}>
           <h2 className="text-center fw-bold mb-4">Welcome back</h2>
-          {error && <div className="alert alert-danger mt-3">{error}</div>} {/* Display error */}
+          {error && <div className="alert alert-danger mt-3">{error}</div>}
           <form onSubmit={handleSubmit}>
             <div className="mb-3">
               <label htmlFor="email" className="form-label fw-medium">

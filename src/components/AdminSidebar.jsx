@@ -1,82 +1,77 @@
-// src/components/AdminDashboardLayout.jsx
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Container, Nav, Button, Offcanvas, Navbar } from 'react-bootstrap';
-import { FaBars, FaSignOutAlt } from 'react-icons/fa'; // Import FaBars and FaSignOutAlt
-import { useAuth } from '../contexts/AuthContext'; // Import auth context
-import AdminSidebarContent from './AdminSidebar'; // Import the AdminSidebar content
+import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { Nav, Button } from 'react-bootstrap';
+import { FaSignOutAlt, FaHome, FaUsers, FaBriefcase, FaChartBar, FaCog } from 'react-icons/fa';
+import { useAuth } from '../contexts/AuthContext'; // To handle logout
 
-// Define common sidebar styles for consistency
-const adminSidebarBaseStyles = {
-  width: '300px', // Set to 300px for consistency with employer dashboard
-  backgroundColor: '#fff',
-  borderRight: 'none', // No border for consistency
-  padding: '2rem 1.5rem',
-  flexShrink: 0,
-  flexDirection: 'column',
-  justifyContent: 'space-between', // Maintain space-between for logout at bottom
-  minHeight: '100vh', // Ensure it takes full height
-};
+// Define the base width for the sidebar
+const SIDEBAR_WIDTH = '280px'; // Adjust this width as needed to match your design
 
-function AdminDashboardLayout({ children }) {
+function AdminSidebar() {
   const { logout } = useAuth();
   const location = useLocation();
-  const navigate = useNavigate();
-  const [showOffcanvas, setShowOffcanvas] = useState(false);
 
-  const handleCloseOffcanvas = () => setShowOffcanvas(false);
-  const handleShowOffcanvas = () => setShowOffcanvas(true);
-
-  // Close Offcanvas automatically when location changes (for mobile navigation)
-  useEffect(() => {
-    handleCloseOffcanvas();
-  }, [location.pathname]);
+  const navLinks = [
+    { to: "/admin/dashboard", icon: <FaHome />, text: "Dashboard" },
+    { to: "/admin/users", icon: <FaUsers />, text: "Users" },
+    { to: "/admin/jobs", icon: <FaBriefcase />, text: "Jobs" },
+    { to: "/admin/reports", icon: <FaChartBar />, text: "Reports" }, // Example path
+    { to: "/admin/settings", icon: <FaCog />, text: "Settings" },   // Example path
+  ];
 
   const handleLogout = () => {
-    logout();
-    navigate('/login'); // Redirect to login page after logout
-    handleCloseOffcanvas(); // Close sidebar after logout
+    logout(); // AuthContext's logout should handle navigation to /login
   };
 
   return (
-    <div style={{ backgroundColor: '#f8f9fa', minHeight: '100vh', display: 'flex' }}>
+    <div style={{
+      width: SIDEBAR_WIDTH,
+      backgroundColor: '#fff', // White background as per image
+      borderRight: '1px solid #e0e0e0', // Subtle border
+      padding: '20px', // Some padding
+      display: 'flex',
+      flexDirection: 'column',
+      justifyContent: 'space-between', // Push logout to bottom
+      minHeight: '100vh', // Ensure it takes full viewport height
+      boxShadow: '2px 0 5px rgba(0,0,0,0.05)', // Subtle shadow
+      position: 'sticky', // Makes it sticky at the top
+      top: 0,
+      left: 0,
+      zIndex: 1000 // Ensure it's above other content
+    }}>
+      {/* Top Section: Logo/Brand */}
+      <div className="mb-5">
+        <h4 className="fw-bold text-dark text-center">Local Labor</h4>
+        {/* You can replace this with an actual logo image if you have one */}
+      </div>
 
-      {/* --- Mobile-Specific Navbar with Hamburger Button --- */}
-      <Navbar expand="md" className="d-md-none bg-white shadow-sm w-100 position-fixed top-0" style={{ zIndex: 1030 }}>
-        <Container fluid>
-          <Button variant="light" onClick={handleShowOffcanvas} className="border-0 p-0">
-            <FaBars size={24} />
-          </Button>
-          <Navbar.Brand as={Link} to="/admin/dashboard" className="ms-3 fw-bold text-dark">
-            Admin Dashboard
-          </Navbar.Brand>
-        </Container>
-      </Navbar>
+      {/* Navigation Links */}
+      <Nav className="flex-column mb-auto"> {/* mb-auto pushes remaining content to bottom */}
+        {navLinks.map((link) => (
+          <Nav.Link
+            key={link.to}
+            as={Link}
+            to={link.to}
+            className={`py-2 px-3 rounded d-flex align-items-center ${location.pathname === link.to ? 'bg-primary text-white fw-bold' : 'text-dark'}`}
+            style={location.pathname === link.to ? {backgroundColor: '#007bff'} : {}} // Primary color for active
+          >
+            <span className="me-3" style={{ fontSize: '1.2rem' }}>{link.icon}</span>{link.text}
+          </Nav.Link>
+        ))}
+      </Nav>
 
-      {/* --- The Admin Sidebar (Offcanvas Component) --- */}
-      {/* 'responsive="md"' makes it:
-          - Function as a sliding sidebar on small screens (<md)
-          - Be a static, visible sidebar on medium screens and up (>=md)
-      */}
-      <Offcanvas show={showOffcanvas} onHide={handleCloseOffcanvas} placement="start" responsive="md">
-        <Offcanvas.Header closeButton className="d-md-none">
-          <Offcanvas.Title>Admin Menu</Offcanvas.Title>
-        </Offcanvas.Header>
-
-        <Offcanvas.Body style={{ ...adminSidebarBaseStyles, display: 'flex' }}>
-          {/* We pass handleCloseOffcanvas to the AdminSidebarContent
-              so it can close the sidebar when a link is clicked. */}
-          <AdminSidebarContent handleClose={handleCloseOffcanvas} handleLogout={handleLogout} />
-        </Offcanvas.Body>
-      </Offcanvas>
-
-      {/* --- Main Content Area --- */}
-      {/* Added paddingTop to account for the fixed mobile Navbar */}
-      <div className="flex-grow-1" style={{ paddingTop: '56px' }}>
-        {children}
+      {/* Logout Button */}
+      <div className="mt-4">
+        <Button
+          variant="outline-danger"
+          className="w-100 d-flex align-items-center justify-content-center"
+          onClick={handleLogout}
+        >
+          <FaSignOutAlt className="me-2" /> Logout
+        </Button>
       </div>
     </div>
   );
 }
 
-export default AdminDashboardLayout;
+export default AdminSidebar;

@@ -95,9 +95,10 @@ function AppContent() {
         </PrivateRoute>
       } />
 
+      {/* !!! IMPORTANT CHANGE HERE !!! */}
       <Route path="/admin/dashboard" element={
         <PrivateRoute allowedRoles={['admin']}>
-          <AdminDashboardLayout><AdminDashboard /></AdminDashboardLayout>
+          <AdminDashboardLayout><AdminDashboard /></AdminDashboardLayout> {/* <<< CHANGED TO MainLayout */}
         </PrivateRoute>
       } />
       <Route path="/admin/users" element={
