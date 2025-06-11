@@ -3,6 +3,7 @@ import { Navbar, Nav, Container, Form, FormControl, Button } from 'react-bootstr
 import { FaSearch } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import InstallPWAButton from './InstallPWAButton'; // Import the InstallPWAButton component
 
 function PublicNavbar() {
   const { isAuthenticated, user, logout } = useAuth();
@@ -17,14 +18,11 @@ function PublicNavbar() {
     <Navbar bg="white" expand="lg" className="border-bottom py-3">
       <Container fluid>
         <Navbar.Brand as={Link} to="/" className="d-flex align-items-center">
-          {/* UPDATED LOGO BLOCK START */}
           <img
-            src={process.env.PUBLIC_URL + '/work_connect2.png'} // Assuming work_connect.png is in your public folder
+            src={process.env.PUBLIC_URL + '/work_connect2.png'}
             alt="WorkConnect Logo"
-            // Adjust width/height as needed for your navbar. This is a common size.
-            style={{ height: '40px', width: 'auto' }} 
+            style={{ height: '40px', width: 'auto' }}
           />
-          {/* UPDATED LOGO BLOCK END */}
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">
@@ -47,9 +45,7 @@ function PublicNavbar() {
             </div>
           </Form>
 
-          {/* Conditional Rendering based on authentication status */}
           {!isAuthenticated ? (
-            // Show Sign Up and Login buttons if not authenticated
             <>
               <Button as={Link} to="/signup" variant="outline-primary" className="me-2 px-4 py-2">
                 Sign Up
@@ -57,11 +53,10 @@ function PublicNavbar() {
               <Button as={Link} to="/login" variant="primary" className="px-4 py-2" style={{ backgroundColor: '#0d6efd', borderColor: '#0d6efd' }}>
                 Login
               </Button>
+              <InstallPWAButton />
             </>
           ) : (
-            // Show Dashboard link and Logout button if authenticated
             <>
-              {/* Optional: Add a link to the user's dashboard based on their role */}
               {user && user.user_type === 'laborer' && (
                 <Button as={Link} to="/jobseeker-dashboard" variant="outline-success" className="me-2 px-4 py-2">
                   Job Seeker Dashboard
