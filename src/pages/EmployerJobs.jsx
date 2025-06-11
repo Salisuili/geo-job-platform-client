@@ -4,7 +4,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 // Removed FaHome, FaBriefcase, FaUsers, FaCreditCard, FaCog, Nav, Form as they are handled by EmployerDashboardLayout
 import { Container, Button, Card, Badge, Spinner, Alert } from 'react-bootstrap';
 import { useAuth } from '../contexts/AuthContext'; 
-import EmployerDashboardLayout from '../components/EmployerDashboardLayout'; // Correctly imported
+import EmployerDashboardLayout from '../layouts/EmployerDashboardLayout'; // Correctly imported
 import defaultJobImage from '../../src/job.avif'; // Assuming this path is correct relative to src/pages/
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;

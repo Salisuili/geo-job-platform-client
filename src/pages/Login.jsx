@@ -20,7 +20,7 @@ const Login = () => {
       if (user.user_type === 'admin') {
         redirectTo = '/admin/dashboard';
       } else if (user.user_type === 'employer') {
-        redirectTo = '/my-jobs';
+        redirectTo = '/dashboard';
       } else if (user.user_type === 'laborer') {
         redirectTo = '/jobs';
       }

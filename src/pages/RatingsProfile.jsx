@@ -14,14 +14,11 @@ import {
   Button,
 } from 'react-bootstrap';
 
-// THIS IS THE CRUCIAL CHANGE: Import your actual useAuth hook
-// Adjust the path according to where your AuthContext.js is located
-import { useAuth } from '../contexts/AuthContext'; // Assuming src/context/AuthContext.js
-import EmployerDashboardLayout from '../components/EmployerDashboardLayout';
+import { useAuth } from '../contexts/AuthContext'; 
+import EmployerDashboardLayout from '../layouts/EmployerDashboardLayout';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
 
-// Helper to calculate time ago
 const timeAgo = (dateString) => {
   if (!dateString) return 'N/A';
   const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);

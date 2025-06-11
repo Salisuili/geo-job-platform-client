@@ -1,9 +1,8 @@
-// src/pages/EmployerDashboard.js
 import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Spinner, Alert, Button } from 'react-bootstrap';
-import { FaBriefcase, FaUsers, FaChartLine } from 'react-icons/fa'; // Added FaBriefcase for jobs count
-import { Link, useNavigate } from 'react-router-dom'; // Import Link
-import EmployerDashboardLayout from '../components/EmployerDashboardLayout';
+import { FaBriefcase, FaUsers, FaChartLine } from 'react-icons/fa'; 
+import { Link, useNavigate } from 'react-router-dom'; 
+import EmployerDashboardLayout from '../layouts/EmployerDashboardLayout';
 import { useAuth } from '../contexts/AuthContext';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
