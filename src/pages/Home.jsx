@@ -191,7 +191,7 @@ function Home() {
                       {job.description}
                     </Card.Text>
                     <Card.Text className="text-primary fw-bold mb-3">
-                      Pay: ${job.pay_rate_min} - ${job.pay_rate_max} per {job.pay_type}
+                      Pay: N{job.pay_rate_min} - N{job.pay_rate_max} per {job.pay_type}
                     </Card.Text>
                     <Button variant="outline-primary" size="sm">
                       View Job

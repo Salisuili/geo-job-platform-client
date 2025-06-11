@@ -202,7 +202,7 @@ function EmployerJobs() {
                       {job.job_type} | {job.location?.address_text || 'N/A'} | Posted {timeAgo(job.createdAt)}
                     </p>
                     <p className="text-secondary mb-0" style={{ fontSize: '0.9rem' }}>
-                      {job.pay_type}: ${job.pay_rate_min} - ${job.pay_rate_max}
+                      {job.pay_type}: N{job.pay_rate_min} - N{job.pay_rate_max}
                     </p>
                   </div>
                 </div>

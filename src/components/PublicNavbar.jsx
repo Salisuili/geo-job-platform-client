@@ -1,36 +1,30 @@
 import React from 'react';
 import { Navbar, Nav, Container, Form, FormControl, Button } from 'react-bootstrap';
 import { FaSearch } from 'react-icons/fa';
-import { Link, useNavigate } from 'react-router-dom'; // Using react-router-dom for navigation
-import { useAuth } from '../contexts/AuthContext'; // Import useAuth hook
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 function PublicNavbar() {
-  const { isAuthenticated, user, logout } = useAuth(); // Get isAuthenticated, user, and logout from AuthContext
-  const navigate = useNavigate(); // For programmatic navigation after logout
+  const { isAuthenticated, user, logout } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout(); // Call the logout function from AuthContext
-    navigate('/login'); // Redirect to login page after logout
+    logout();
+    navigate('/login');
   };
 
   return (
     <Navbar bg="white" expand="lg" className="border-bottom py-3">
       <Container fluid>
         <Navbar.Brand as={Link} to="/" className="d-flex align-items-center">
-          <div className="d-flex align-items-center gap-2 text-dark">
-            <div className="me-2">
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 48 48"
-                fill="currentColor"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M6 6H42L36 24L42 42H6L12 24L6 6Z" />
-              </svg>
-            </div>
-            <h2 className="h5 fw-bold mb-0">WorkConnect</h2>
-          </div>
+          {/* UPDATED LOGO BLOCK START */}
+          <img
+            src={process.env.PUBLIC_URL + '/work_connect2.png'} // Assuming work_connect.png is in your public folder
+            alt="WorkConnect Logo"
+            // Adjust width/height as needed for your navbar. This is a common size.
+            style={{ height: '40px', width: 'auto' }} 
+          />
+          {/* UPDATED LOGO BLOCK END */}
         </Navbar.Brand>
         <Navbar.Toggle aria-controls="basic-navbar-nav" />
         <Navbar.Collapse id="basic-navbar-nav">

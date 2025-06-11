@@ -1,4 +1,4 @@
-// src/components/AdminSidebar.jsx (No changes needed, use your existing code)
+// src/components/AdminSidebar.jsx
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Nav, Button } from 'react-bootstrap';
@@ -39,20 +39,16 @@ function AdminSidebar({ onLinkClick }) { // Correctly receives onLinkClick prop
       }}
     >
 
-      <div className="d-flex align-items-center gap-2 text-dark">
-            <div className="me-2">
-              <svg
-                width="24"
-                height="24"
-                viewBox="0 0 48 48"
-                fill="currentColor"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path d="M6 6H42L36 24L42 42H6L12 24L6 6Z" />
-              </svg>
-            </div>
-            <h2 className="h5 fw-bold mb-0">WorkConnect</h2>
-          </div>
+      {/* UPDATED LOGO BLOCK START */}
+      <div className="d-flex mb-4"> {/* Added mb-4 here for spacing */}
+        <img
+          src={process.env.PUBLIC_URL + '/work_connect2.png'} // Assuming work_connect.png is in your public folder
+          alt="WorkConnect Logo"
+          style={{ width: '180px', height: 'auto', display: 'block' }} // Adjust width as needed for your logo's appearance
+        />
+      </div>
+      {/* UPDATED LOGO BLOCK END */}
+
       <div className="mb-4">
         <h6 className="fw-bold mb-0">Welcome</h6>
         <small className="text-muted">{user?.user_type === 'admin' ? 'Admin' : 'User'}</small>
