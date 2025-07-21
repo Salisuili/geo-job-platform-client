@@ -1,55 +1,65 @@
-import React, { useState, useEffect } from 'react'; // Import useEffect
-import { Link, useLocation } from 'react-router-dom'; // Import useLocation
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Container, Button, Offcanvas, Navbar } from 'react-bootstrap';
 import { FaBars } from 'react-icons/fa';
 import AdminSidebar from '../components/AdminSidebar';
 
 function AdminDashboardLayout({ children }) {
-  const [showSidebar, setShowSidebar] = useState(false);
-  const location = useLocation(); // Initialize useLocation
+  const [showOffcanvas, setShowOffcanvas] = useState(false);
+  const location = useLocation();
 
-  const handleCloseSidebar = () => setShowSidebar(false);
-  const handleShowSidebar = () => setShowSidebar(true);
+  const handleCloseOffcanvas = () => setShowOffcanvas(false);
+  const handleShowOffcanvas = () => setShowOffcanvas(true);
 
-  // Close Offcanvas automatically when the route changes (important for mobile navigation)
   useEffect(() => {
-    handleCloseSidebar();
-  }, [location.pathname]); // Dependency on location.pathname to re-run when route changes
+    handleCloseOffcanvas();
+  }, [location.pathname]);
 
   return (
-    <div style={{ backgroundColor: '#f8f9fa', minHeight: '100vh', display: 'flex' }}> {/* Added display:flex here for overall layout */}
-      {/* --- Mobile Navbar with Hamburger (Visible on small screens only) --- */}
-      {/* d-md-none hides this Navbar on medium and larger screens */}
+    <div className="d-flex" style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
+      {/* Mobile Navbar */}
       <Navbar bg="white" className="d-md-none shadow-sm px-3" fixed="top">
-        <Button variant="light" onClick={handleShowSidebar} className="border-0">
+        <Button variant="light" onClick={handleShowOffcanvas} className="border-0 p-0">
           <FaBars size={20} />
         </Button>
         <Navbar.Brand as={Link} to="/admin/dashboard" className="ms-3 fw-bold text-dark">Admin Panel</Navbar.Brand>
       </Navbar>
 
-      {/* --- Offcanvas Sidebar for Small Screens (Hidden on md and up) --- */}
-      {/* d-md-none hides the Offcanvas itself on medium and larger screens */}
-      <Offcanvas show={showSidebar} onHide={handleCloseSidebar} responsive="md" className="d-md-none">
-        <Offcanvas.Header closeButton>
-          <Offcanvas.Title>Admin Menu</Offcanvas.Title>
+      {/* Desktop Sidebar */}
+      <div
+        className="d-none d-md-block"
+        style={{
+          width: '280px',
+          backgroundColor: '#fff',
+          borderRight: '1px solid #e0e0e0',
+          padding: '20px',
+          position: 'sticky',
+          top: 0,
+          height: '100vh',
+          overflowY: 'auto',
+        }}
+      >
+        <AdminSidebar />
+      </div>
+
+      {/* Mobile Offcanvas Sidebar */}
+      <Offcanvas 
+        show={showOffcanvas} 
+        onHide={handleCloseOffcanvas} 
+        placement="start" 
+        className="d-md-none"
+        style={{ width: '280px' }}
+      >
+        <Offcanvas.Header closeButton className="border-bottom">
+          <Offcanvas.Title className="fw-bold">Admin Menu</Offcanvas.Title>
         </Offcanvas.Header>
-        <Offcanvas.Body className="p-0"> {/* AdminSidebar has its own padding */}
-          {/* AdminSidebar for mobile, pass onLinkClick prop */}
-          <AdminSidebar onLinkClick={handleCloseSidebar} />
+        <Offcanvas.Body className="p-0 d-flex flex-column">
+          <AdminSidebar onLinkClick={handleCloseOffcanvas} />
         </Offcanvas.Body>
       </Offcanvas>
 
-      {/* --- Desktop Sidebar (Visible on medium and large screens only) --- */}
-      {/* d-none hides on xs-sm, d-md-block makes it a block on md and up */}
-      {/* The AdminSidebar component already contains its fixed width, background, etc. */}
-      <div className="d-none d-md-block">
-        <AdminSidebar /> {/* AdminSidebar for desktop, no onLinkClick needed here */}
-      </div>
-
-      {/* --- Main Content --- */}
-      {/* flex-grow-1 ensures it takes remaining horizontal space */}
-      {/* pt-md-0 pt-5: pt-5 for mobile (to account for fixed Navbar), pt-0 for desktop */}
-      <div className="flex-grow-1 p-4 pt-md-0" style={{ paddingTop: '56px' }}> {/* Adjusted paddingTop for mobile Navbar */}
+      {/* Main Content */}
+      <div className="flex-grow-1 p-4 pt-5 pt-md-0" style={{ overflowX: 'hidden' }}>
         {children}
       </div>
     </div>

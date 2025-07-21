@@ -1,11 +1,10 @@
-// src/components/AdminSidebar.jsx
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Nav, Button } from 'react-bootstrap';
 import { FaSignOutAlt, FaHome, FaUsers, FaBriefcase, FaChartBar, FaCog } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 
-function AdminSidebar({ onLinkClick }) { // Correctly receives onLinkClick prop
+function AdminSidebar({ onLinkClick }) {
   const { user, logout } = useAuth();
   const location = useLocation();
 
@@ -17,64 +16,57 @@ function AdminSidebar({ onLinkClick }) { // Correctly receives onLinkClick prop
     { to: "/admin/settings", icon: <FaCog />, text: "Settings" },
   ];
 
+  const isNavLinkActive = (path) => {
+    if (path === "/admin/dashboard") {
+      return location.pathname === path;
+    }
+    return location.pathname.startsWith(path);
+  };
+
   const handleLogout = () => {
     logout();
-    if (onLinkClick) {
-      onLinkClick(); // Close sidebar if onLinkClick is provided (for mobile)
-    }
+    if (onLinkClick) onLinkClick();
   };
 
   return (
-    <div
-      style={{
-        width: '280px',
-        backgroundColor: '#fff',
-        borderRight: '1px solid #e0e0e0',
-        padding: '20px',
-        display: 'flex', // This flex property is fine as it applies to internal layout
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        minHeight: '100vh', // This minHeight will apply when the sidebar is visible
-        boxShadow: '2px 0 5px rgba(0,0,0,0.05)',
-      }}
-    >
+    <div className="d-flex flex-column h-100">
+      {/* Scrollable Content */}
+      <div style={{ overflowY: 'auto', flex: 1 }}>
+        {/* Logo Block */}
+        <div className="d-flex mb-4">
+          <img
+            src={process.env.PUBLIC_URL + '/work_connect2.png'}
+            alt="WorkConnect Logo"
+            style={{ width: '180px', height: 'auto' }}
+          />
+        </div>
 
-      {/* UPDATED LOGO BLOCK START */}
-      <div className="d-flex mb-4"> {/* Added mb-4 here for spacing */}
-        <img
-          src={process.env.PUBLIC_URL + '/work_connect2.png'} // Assuming work_connect.png is in your public folder
-          alt="WorkConnect Logo"
-          style={{ width: '180px', height: 'auto', display: 'block' }} // Adjust width as needed for your logo's appearance
-        />
+        <div className="mb-4">
+          <h6 className="fw-bold mb-0">Welcome</h6>
+          <small className="text-muted">{user?.user_type === 'admin' ? 'Admin' : 'User'}</small>
+        </div>
+
+        {/* Navigation */}
+        <Nav className="flex-column mb-3">
+          {navLinks.map((link) => (
+            <Nav.Link
+              key={link.to}
+              as={Link}
+              to={link.to}
+              onClick={onLinkClick}
+              className={`py-2 px-3 rounded d-flex align-items-center mb-2 ${
+                isNavLinkActive(link.to) ? 'bg-primary text-white fw-bold' : 'text-dark'
+              }`}
+            >
+              <span className="me-3" style={{ fontSize: '1.2rem' }}>{link.icon}</span>
+              {link.text}
+            </Nav.Link>
+          ))}
+        </Nav>
       </div>
-      {/* UPDATED LOGO BLOCK END */}
 
-      <div className="mb-4">
-        <h6 className="fw-bold mb-0">Welcome</h6>
-        <small className="text-muted">{user?.user_type === 'admin' ? 'Admin' : 'User'}</small>
-      </div>
-
-      {/* Navigation */}
-      <Nav className="flex-column mb-auto">
-        {navLinks.map((link) => (
-          <Nav.Link
-            key={link.to}
-            as={Link}
-            to={link.to}
-            onClick={onLinkClick} // Apply onLinkClick to close the sidebar on link click
-            className={`py-2 px-3 rounded d-flex align-items-center ${
-              location.pathname === link.to ? 'bg-primary text-white fw-bold' : 'text-dark'
-            }`}
-            style={location.pathname === link.to ? {backgroundColor: '#007bff'} : {}}
-          >
-            <span className="me-3" style={{ fontSize: '1.2rem' }}>{link.icon}</span>
-            {link.text}
-          </Nav.Link>
-        ))}
-      </Nav>
-
-      {/* Logout */}
-      <div className="mt-4">
+      {/* Sticky Logout Button */}
+      <div className="mt-auto p-3 bg-white border-top">
         <Button
           variant="outline-danger"
           className="w-100 d-flex align-items-center justify-content-center"

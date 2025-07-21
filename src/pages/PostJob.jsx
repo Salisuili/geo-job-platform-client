@@ -6,7 +6,7 @@ import { FaHome, FaBriefcase, FaUsers, FaCreditCard, FaCog } from 'react-icons/f
 
 import {
   Container,
-  Row, // Row is still useful for layout, even if not for lat/long
+  Row,
   Col,
   Form,
   Button,
@@ -23,14 +23,13 @@ function PostJob() {
   const [jobTitle, setJobTitle] = useState('');
   const [jobDescription, setJobDescription] = useState('');
   const [jobType, setJobType] = useState('');
-  // MODIFIED: Only collect 'city' from the employer
   const [city, setCity] = useState(''); // Human-readable city
   const [payRateMin, setPayRateMin] = useState('');
   const [payRateMax, setPayRateMax] = useState('');
   const [payType, setPayType] = useState('');
   const [applicationDeadline, setApplicationDeadline] = useState('');
   const [requiredSkills, setRequiredSkills] = useState(''); // Input as comma-separated string
-  const [imageUrl, setImageUrl] = useState('');
+  const [jobImageFile, setJobImageFile] = useState(null); // CHANGED: State for the actual file object
 
   // UI feedback states
   const [loading, setLoading] = useState(false);
@@ -48,14 +47,13 @@ function PostJob() {
     }
   }, [isAuthenticated, user, navigate]);
 
-
   const handleSubmit = async (event) => {
     event.preventDefault();
     setLoading(true);
     setError('');
     setSuccess('');
 
-    // Update validation: latitude and longitude are no longer required from frontend
+    // Basic validation
     if (!jobTitle || !jobDescription || !jobType || !city || !payRateMin || !payRateMax || !payType) {
       setError('Please fill in all required fields, including the job city.');
       setLoading(false);
@@ -68,33 +66,38 @@ function PostJob() {
       return;
     }
 
-    // Construct the job data payload for the backend
-    const jobData = {
-      employer_id: user._id, // Get employer ID from authenticated user
-      title: jobTitle,
-      description: jobDescription,
-      job_type: jobType,
-      // MODIFIED: Send only the city to the backend
-      city: city,
-      pay_rate_min: parseFloat(payRateMin),
-      pay_rate_max: parseFloat(payRateMax),
-      pay_type: payType,
-      application_deadline: applicationDeadline ? new Date(applicationDeadline).toISOString() : undefined,
-      required_skills: requiredSkills ? requiredSkills.split(',').map(s => s.trim()) : [],
-      image_url: imageUrl || undefined,
-      status: "Active", // Default status upon creation
-    };
+    // CHANGED: Use FormData for file uploads
+    const formData = new FormData();
+    formData.append('employer_id', user._id);
+    formData.append('title', jobTitle);
+    formData.append('description', jobDescription);
+    formData.append('job_type', jobType);
+    formData.append('city', city);
+    formData.append('pay_rate_min', parseFloat(payRateMin));
+    formData.append('pay_rate_max', parseFloat(payRateMax));
+    formData.append('pay_type', payType);
+    if (applicationDeadline) {
+      formData.append('application_deadline', new Date(applicationDeadline).toISOString());
+    }
+    if (requiredSkills) {
+      formData.append('required_skills', requiredSkills); // Backend handles splitting comma-separated string
+    }
+    if (jobImageFile) {
+      formData.append('jobImage', jobImageFile); // APPENDED: The actual image file with key 'jobImage'
+    }
+    formData.append('status', 'Active');
 
-    console.log("Job Data to Post:", jobData); // For debugging
+    console.log("Form Data to Post:", formData); // For debugging, won't show content of file
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/jobs`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.token}`, // Send the user's token
+          // IMPORTANT: Do NOT set 'Content-Type': 'application/json' when sending FormData with files.
+          // The browser sets the correct 'Content-Type' (multipart/form-data) automatically.
+          'Authorization': `Bearer ${user.token}`, // Still send the user's token
         },
-        body: JSON.stringify(jobData),
+        body: formData, // CHANGED: Send FormData directly
       });
 
       const data = await response.json();
@@ -107,13 +110,13 @@ function PostJob() {
         setJobTitle('');
         setJobDescription('');
         setJobType('');
-        setCity(''); // Reset city
+        setCity('');
         setPayRateMin('');
         setPayRateMax('');
         setPayType('');
         setApplicationDeadline('');
         setRequiredSkills('');
-        setImageUrl('');
+        setJobImageFile(null); // CHANGED: Reset file input
       } else {
         setError(data.message || 'Failed to post job. Please try again.');
       }
@@ -221,7 +224,7 @@ function PostJob() {
             </Form.Select>
           </Form.Group>
 
-          {/* MODIFIED: Location Field - Only City */}
+          {/* Location Field - Only City */}
           <Form.Group className="mb-4" controlId="city">
             <Form.Label className="fw-bold">Job City</Form.Label>
             <Form.Control
@@ -308,16 +311,16 @@ function PostJob() {
             />
           </Form.Group>
 
-          {/* Job Image URL (No changes here) */}
-          <Form.Group className="mb-4" controlId="imageUrl">
-            <Form.Label className="fw-bold">Job Image URL (Optional)</Form.Label>
+          {/* NEW: Job Image Upload Field */}
+          <Form.Group className="mb-4" controlId="jobImage">
+            <Form.Label className="fw-bold">Job Image (Optional)</Form.Label>
             <Form.Control
-              type="url"
-              placeholder="http://example.com/job_image.jpg"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
+              type="file"
+              accept="image/*" // Accept only image files
+              onChange={(e) => setJobImageFile(e.target.files[0])} // Store the file object
               style={{ backgroundColor: '#f0f2f5', border: '1px solid #e9ecef', padding: '0.75rem 1rem', borderRadius: '0.375rem' }}
             />
+            <small className="text-muted mt-1 d-block">Upload an image related to the job (e.g., a sample of the work).</small>
           </Form.Group>
 
           {/* Post Job Button (No changes here) */}
@@ -332,7 +335,7 @@ function PostJob() {
               {loading ? 'Posting Job...' : 'Post Job'}
             </Button>
           </div>
-        </Form>
+        </Form> 
       </Container>
     </div>
   );

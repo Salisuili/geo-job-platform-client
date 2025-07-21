@@ -1,20 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom'; // Added Link for future navigation if needed
+import { useNavigate, Link } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
-// Removed FaHome, FaBriefcase, FaUsers, FaCreditCard, FaCog, Nav, Form as they are handled by EmployerDashboardLayout
 import { Container, Button, Card, Badge, Spinner, Alert } from 'react-bootstrap';
-import { useAuth } from '../contexts/AuthContext'; 
-import EmployerDashboardLayout from '../layouts/EmployerDashboardLayout'; // Correctly imported
-import defaultJobImage from '../../src/job.avif'; // Assuming this path is correct relative to src/pages/
+import { useAuth } from '../contexts/AuthContext';
+import EmployerDashboardLayout from '../layouts/EmployerDashboardLayout';
+
+// IMPORTANT: Removed the import for defaultJobImage from the frontend assets.
+// We will construct its URL from the backend's /uploads just like other job images.
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
+// Define the default image path relative to your backend's /uploads directory
+const DEFAULT_JOB_IMAGE_PATH = '/uploads/geo_job_default.jpg'; // This assumes 'geo_job_default.jpg' is directly in your backend's 'uploads' folder
 
 function EmployerJobs() {
   const { user, token, isAuthenticated, loading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
 
   const [postedJobs, setPostedJobs] = useState([]);
-  const [loadingJobs, setLoadingJobs] = useState(true); 
+  const [loadingJobs, setLoadingJobs] = useState(true);
   const [error, setError] = useState(null);
 
   const timeAgo = (date) => {
@@ -40,7 +43,7 @@ function EmployerJobs() {
       if (authLoading || !isAuthenticated || !token) {
         console.log("EmployerJobs: Authentication state not ready or token missing. Skipping fetch.", { authLoading, isAuthenticated, token });
         if (!authLoading && !isAuthenticated) {
-            logout(); 
+            logout();
             navigate('/login');
         }
         setLoadingJobs(false);
@@ -84,12 +87,12 @@ function EmployerJobs() {
 
   const handleViewApplicants = (jobId) => {
     console.log(`View Applicants for Job ID: ${jobId}`);
-    navigate(`/employer/jobs/${jobId}/applicants`); // Use navigate for actual routing
+    navigate(`/employer/jobs/${jobId}/applicants`);
   };
 
   const handleEditJob = (jobId) => {
     console.log(`Edit Job ID: ${jobId}`);
-    navigate(`/employer/jobs/${jobId}/edit`); // Use navigate for actual routing
+    navigate(`/employer/jobs/${jobId}/edit`);
   };
 
   const handleDeleteJob = async (jobId) => {
@@ -130,7 +133,7 @@ function EmployerJobs() {
   // --- Render based on loading state ---
   if (authLoading || loadingJobs) {
     return (
-        <EmployerDashboardLayout> {/* Wrap loading state for consistent layout */}
+        <EmployerDashboardLayout>
             <Container fluid className="py-4 px-5 text-center flex-grow-1">
                 <Spinner animation="border" role="status" className="mt-5">
                     <span className="visually-hidden">Loading...</span>
@@ -143,7 +146,7 @@ function EmployerJobs() {
 
   if (error) {
     return (
-        <EmployerDashboardLayout> {/* Wrap error state for consistent layout */}
+        <EmployerDashboardLayout>
             <Container fluid className="py-4 px-5 flex-grow-1">
                 <Alert variant="danger" className="mt-5">
                     <Alert.Heading>Error loading jobs!</Alert.Heading>
@@ -157,9 +160,7 @@ function EmployerJobs() {
   // If no jobs posted yet
   if (postedJobs.length === 0) {
     return (
-      // The EmployerDashboardLayout component already provides the outer div and sidebar
-      <EmployerDashboardLayout> 
-        {/* Main Content Area - No jobs */}
+      <EmployerDashboardLayout>
         <Container fluid className="py-4 px-5 flex-grow-1">
           <h3 className="mb-4 fw-bold">My Posted Jobs</h3>
           <Card className="text-center py-5 shadow-sm border-0">
@@ -175,9 +176,7 @@ function EmployerJobs() {
 
   // --- Render jobs if loaded and present ---
   return (
-    // Wrap the entire content that needs the dashboard layout
     <EmployerDashboardLayout>
-      {/* Main Content Area */}
       <Container fluid className="py-4 px-5 flex-grow-1">
         <h3 className="mb-4 fw-bold">My Posted Jobs</h3>
           {postedJobs.map((job) => (
@@ -186,7 +185,8 @@ function EmployerJobs() {
                 {/* Job Image & Details */}
                 <div className="me-md-3 mb-3 mb-md-0 d-flex flex-row align-items-center">
                   <img
-                    src={job.image_url || defaultJobImage} // Use job.image_url or fallback
+                    // **CORRECTED**: All images (user-uploaded or default) are now sourced from the backend's /uploads.
+                    src={job.image_url ? `${API_BASE_URL}${job.image_url.startsWith('/uploads/') ? job.image_url : `/uploads/${job.image_url}`}` : `${API_BASE_URL}${DEFAULT_JOB_IMAGE_PATH}`}
                     alt={job.title}
                     className="rounded me-3"
                     style={{ width: '100px', height: '80px', objectFit: 'cover' }}
