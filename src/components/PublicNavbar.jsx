@@ -58,7 +58,7 @@ function PublicNavbar() {
           ) : (
             <>
               {user && user.user_type === 'laborer' && (
-                <Button as={Link} to="/jobseeker-dashboard" variant="outline-success" className="me-2 px-4 py-2">
+                <Button as={Link} to="/laboradashboard" variant="outline-success" className="me-2 px-4 py-2">
                   Job Seeker Dashboard
                 </Button>
               )}

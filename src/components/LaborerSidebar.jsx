@@ -1,63 +1,54 @@
-// src/components/sidebars/LaborerSidebar.jsx
 import React from 'react';
-import { Nav } from 'react-bootstrap';
+import { Nav, Button } from 'react-bootstrap';
 import { Link, useLocation } from 'react-router-dom';
-import { FaHome, FaBriefcase, FaListAlt, FaCog, FaSignOutAlt, FaUserCircle } from 'react-icons/fa';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../contexts/AuthContext'; // Adjust path as needed
 
-const LaborerSidebar = ({ handleClose }) => {
-  const { user, logout } = useAuth();
-  const location = useLocation();
+function LaborerSidebar({ onLinkClick }) {
+    const { user, logout } = useAuth();
+    const location = useLocation();
 
-  const navLinks = [
-    { to: "/laborer/dashboard", icon: <FaHome />, text: "Dashboard" },
-    { to: "/", icon: <FaBriefcase />, text: "Find Jobs" }, // Link to the public home page for finding jobs
-    { to: "/my-applications", icon: <FaListAlt />, text: "My Applications" },
-    { to: "/laborer/profile", icon: <FaUserCircle />, text: "Profile" },
-    // { to: "/laborer/settings", icon: <FaCog />, text: "Settings" }, // Example: if you add settings
-  ];
+    const navLinks = [
+        { to: '/dashboard', label: 'Dashboard' },
+        { to: '/find-work', label: 'Find Work' },
+        { to: '/my-applications', label: 'My Applications' },
+        { to: '/messages', label: 'Messages' },
+        { to: '/notifications', label: 'Notifications' },
+        { to: '/profile', label: 'My Profile' },
+        // Add more laborer-specific links here
+    ];
 
-  const isNavLinkActive = (path) => {
-    return location.pathname === path;
-  };
+    // Function to check if a link is active, handling nested paths
+    const isActiveLink = (path) => {
+        // Special handling for dashboard, which might be the root of the laborer section
+        if (path === '/dashboard' && (location.pathname === '/dashboard' || location.pathname === '/')) {
+            return true;
+        }
+        // General check for direct match or if it's a parent of the current path
+        return location.pathname === path || location.pathname.startsWith(`${path}/`);
+    };
 
-  const handleLogout = () => {
-    logout();
-    if (handleClose) handleClose(); // Close offcanvas after logout
-  };
-
-  return (
-    <>
-      <div className="mb-4">
-        <h6 className="fw-bold mb-0">Welcome, {user?.full_name || 'Laborer'}</h6>
-        <small className="text-muted">Laborer</small>
-      </div>
-      <Nav className="flex-column flex-grow-1"> {/* flex-grow-1 ensures nav takes available space */}
-        {navLinks.map(link => (
-          <Nav.Link
-            key={link.to}
-            as={Link}
-            to={link.to}
-            onClick={handleClose} // Close offcanvas on link click
-            className={`py-2 d-flex align-items-center ${isNavLinkActive(link.to) ? 'text-primary fw-bold' : 'text-dark'}`}
-            style={{ borderRadius: '0.375rem', backgroundColor: isNavLinkActive(link.to) ? '#e9ecef' : 'transparent' }}
-          >
-            <span className="me-2">{link.icon}</span> {link.text}
-          </Nav.Link>
-        ))}
-
-        {/* Logout Link */}
-        <Nav.Link
-          as="button"
-          onClick={handleLogout}
-          className="text-danger py-2 d-flex align-items-center mt-auto"
-          style={{ borderRadius: '0.375rem', cursor: 'pointer' }}
-        >
-          <FaSignOutAlt className="me-2" /> Logout
-        </Nav.Link>
-      </Nav>
-    </>
-  );
-};
+    return (
+        <Nav className="flex-column flex-grow-1"> {/* flex-grow-1 ensures nav takes available space */}
+            {user && ( // Display welcome message only if user is logged in
+                <div className="mb-4 text-center">
+                    <h6 className="fw-bold mb-0">Welcome, {user?.full_name || 'Laborer'}</h6>
+                    <small className="text-muted">Laborer</small>
+                </div>
+            )}
+            {navLinks.map(link => (
+                <Nav.Link
+                    key={link.to}
+                    as={Link}
+                    to={link.to}
+                    onClick={onLinkClick} // Close offcanvas on link click
+                    className={`text-white py-2 ${isActiveLink(link.to) ? 'bg-primary rounded' : 'hover-bg-secondary'}`}
+                    style={{ '--bs-bg-opacity': '.25' }} // For hover effect on secondary background
+                >
+                    {link.label}
+                </Nav.Link>
+            ))}
+        </Nav>
+    );
+}
 
 export default LaborerSidebar;

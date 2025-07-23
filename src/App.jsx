@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import MainLayout from './layouts/MainLayout';
 import PublicLayout from './layouts/PublicLayout';
 import AdminDashboardLayout from './layouts/AdminDashboardLayout';
+import LaborerDashboardLayout from './layouts/LaborerDashboardLayout'; // NEW: Import LaborerDashboardLayout
 
 import Home from './pages/Home';
 import EmployerJobs from './pages/EmployerJobs';
@@ -21,7 +22,8 @@ import LoginPage from './pages/Login';
 import SignupPage from './pages/SignUp';
 import EmployerDashboard from './pages/EmployerDashboard';
 import LaborerList from './pages/LaborerList';
-import JobDetails from './pages/JobDetails'; // <--- NEW: Import JobDetails component
+import JobDetails from './pages/JobDetails';
+import LaborerDashboard from './pages/LaborerDashboard'; // This is now correctly uncommented
 
 const PrivateRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, user, loading } = useAuth();
@@ -56,10 +58,22 @@ function AppContent() {
       <Route path="/services" element={<PublicLayout><div>Services Page Content</div></PublicLayout>} />
       <Route path="/about" element={<PublicLayout><div>About Us Page Content</div></PublicLayout>} />
       <Route path="/laborers/:laborerId" element={<RatingsProfile />} />
-      <Route path="/dashboard" element={<PublicLayout><EmployerDashboard /></PublicLayout>} />
       <Route path="/laborers" element={<PublicLayout><LaborerList /></PublicLayout>} />
-      <Route path="/job/:id" element={<PublicLayout><JobDetails /></PublicLayout>} /> {/* <--- NEW: Route for JobDetails */}
+      <Route path="/job/:id" element={<PublicLayout><JobDetails /></PublicLayout>} />
 
+      {/* --- MODIFIED: Dashboard Route for both Employer and Laborer --- */}
+      <Route path="/dashboard" element={
+        <PrivateRoute allowedRoles={['employer', 'laborer']}>
+          {user && user.user_type === 'employer' ? (
+            <MainLayout><EmployerDashboard /></MainLayout> // Employers use MainLayout
+          ) : user && user.user_type === 'laborer' ? (
+            // Use LaborerDashboardLayout for laborers and render the LaborerDashboard component
+            <LaborerDashboardLayout><LaborerDashboard /></LaborerDashboardLayout>
+          ) : (
+            <Navigate to="/" replace /> // Fallback
+          )}
+        </PrivateRoute>
+      } />
 
       <Route path="/find-work" element={
         <PrivateRoute allowedRoles={['laborer', 'employer']}>
@@ -101,7 +115,7 @@ function AppContent() {
         </PrivateRoute>
       } />
 
-      {/* !!! IMPORTANT CHANGE HERE !!! */}
+      {/* Admin Routes */}
       <Route path="/admin/dashboard" element={
         <PrivateRoute allowedRoles={['admin']}>
           <AdminDashboardLayout><AdminDashboard /></AdminDashboardLayout>
