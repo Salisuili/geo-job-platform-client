@@ -1,21 +1,17 @@
+// src/pages/EmployerJobs.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { Container, Button, Card, Badge, Spinner, Alert } from 'react-bootstrap';
+import { Container, Button, Card, Badge, Spinner, Alert, Row, Col } from 'react-bootstrap';
 import { useAuth } from '../contexts/AuthContext';
 import EmployerDashboardLayout from '../layouts/EmployerDashboardLayout';
 
-// IMPORTANT: Removed the import for defaultJobImage from the frontend assets.
-// We will construct its URL from the backend's /uploads just like other job images.
-
 const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
-// Define the default image path relative to your backend's /uploads directory
-const DEFAULT_JOB_IMAGE_PATH = '/uploads/geo_job_default.jpg'; // This assumes 'geo_job_default.jpg' is directly in your backend's 'uploads' folder
+const DEFAULT_JOB_IMAGE_PATH = '/uploads/job_images/geo_job_default.jpg'; // Corrected path for default image
 
 function EmployerJobs() {
   const { user, token, isAuthenticated, loading: authLoading, logout } = useAuth();
   const navigate = useNavigate();
-
   const [postedJobs, setPostedJobs] = useState([]);
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [error, setError] = useState(null);
@@ -43,8 +39,8 @@ function EmployerJobs() {
       if (authLoading || !isAuthenticated || !token) {
         console.log("EmployerJobs: Authentication state not ready or token missing. Skipping fetch.", { authLoading, isAuthenticated, token });
         if (!authLoading && !isAuthenticated) {
-            logout();
-            navigate('/login');
+          logout();
+          navigate('/login');
         }
         setLoadingJobs(false);
         return;
@@ -52,7 +48,6 @@ function EmployerJobs() {
 
       setLoadingJobs(true);
       setError(null);
-
       try {
         const response = await fetch(`${API_BASE_URL}/api/jobs/my-jobs`, {
           headers: {
@@ -61,10 +56,10 @@ function EmployerJobs() {
         });
 
         if (response.status === 401 || response.status === 403) {
-            console.error("EmployerJobs: Unauthorized or Forbidden access. Logging out.");
-            logout();
-            navigate('/login');
-            return;
+          console.error("EmployerJobs: Unauthorized or Forbidden access. Logging out.");
+          logout();
+          navigate('/login');
+          return;
         }
 
         if (!response.ok) {
@@ -84,10 +79,9 @@ function EmployerJobs() {
     fetchEmployerJobs();
   }, [user, token, isAuthenticated, authLoading, navigate, logout]);
 
-
   const handleViewApplicants = (jobId) => {
     console.log(`View Applicants for Job ID: ${jobId}`);
-    navigate(`/employer/jobs/${jobId}/applicants`);
+    navigate(`/employer/jobs/${jobId}/applicants`); // Navigate to JobApplicants page
   };
 
   const handleEditJob = (jobId) => {
@@ -97,10 +91,9 @@ function EmployerJobs() {
 
   const handleDeleteJob = async (jobId) => {
     if (!token) {
-        alert("Not authorized to delete job: Token missing.");
-        return;
+      alert("Not authorized to delete job: Token missing.");
+      return;
     }
-
     if (window.confirm(`Are you sure you want to delete job ID: ${jobId}?`)) {
       try {
         const response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}`, {
@@ -111,9 +104,9 @@ function EmployerJobs() {
         });
 
         if (response.status === 401 || response.status === 403) {
-            logout();
-            navigate('/login');
-            return;
+          logout();
+          navigate('/login');
+          return;
         }
 
         if (!response.ok) {
@@ -130,34 +123,32 @@ function EmployerJobs() {
     }
   };
 
-  // --- Render based on loading state ---
   if (authLoading || loadingJobs) {
     return (
-        <EmployerDashboardLayout>
-            <Container fluid className="py-4 px-5 text-center flex-grow-1">
-                <Spinner animation="border" role="status" className="mt-5">
-                    <span className="visually-hidden">Loading...</span>
-                </Spinner>
-                <p className="mt-2">Loading your jobs...</p>
-            </Container>
-        </EmployerDashboardLayout>
+      <EmployerDashboardLayout>
+        <Container fluid className="py-4 px-5 text-center flex-grow-1">
+          <Spinner animation="border" role="status" className="mt-5">
+            <span className="visually-hidden">Loading...</span>
+          </Spinner>
+          <p className="mt-2">Loading your jobs...</p>
+        </Container>
+      </EmployerDashboardLayout>
     );
   }
 
   if (error) {
     return (
-        <EmployerDashboardLayout>
-            <Container fluid className="py-4 px-5 flex-grow-1">
-                <Alert variant="danger" className="mt-5">
-                    <Alert.Heading>Error loading jobs!</Alert.Heading>
-                    <p>{error}</p>
-                </Alert>
-            </Container>
-        </EmployerDashboardLayout>
+      <EmployerDashboardLayout>
+        <Container fluid className="py-4 px-5 flex-grow-1">
+          <Alert variant="danger" className="mt-5">
+            <Alert.Heading>Error loading jobs!</Alert.Heading>
+            <p>{error}</p>
+          </Alert>
+        </Container>
+      </EmployerDashboardLayout>
     );
   }
 
-  // If no jobs posted yet
   if (postedJobs.length === 0) {
     return (
       <EmployerDashboardLayout>
@@ -174,7 +165,6 @@ function EmployerJobs() {
     );
   }
 
-  // --- Render jobs if loaded and present ---
   return (
     <EmployerDashboardLayout>
       <Container fluid className="py-4 px-5 flex-grow-1">
@@ -182,11 +172,9 @@ function EmployerJobs() {
           {postedJobs.map((job) => (
             <Card key={job._id} className="mb-3 shadow-sm border-0">
               <Card.Body className="d-flex flex-column flex-md-row align-items-md-center">
-                {/* Job Image & Details */}
                 <div className="me-md-3 mb-3 mb-md-0 d-flex flex-row align-items-center">
                   <img
-                    // **CORRECTED**: All images (user-uploaded or default) are now sourced from the backend's /uploads.
-                    src={job.image_url ? `${API_BASE_URL}${job.image_url.startsWith('/uploads/') ? job.image_url : `/uploads/${job.image_url}`}` : `${API_BASE_URL}${DEFAULT_JOB_IMAGE_PATH}`}
+                    src={job.image_url ? `${API_BASE_URL}${job.image_url.startsWith('/uploads/') ? job.image_url : `/uploads/job_images/${job.image_url}`}` : `${API_BASE_URL}${DEFAULT_JOB_IMAGE_PATH}`}
                     alt={job.title}
                     className="rounded me-3"
                     style={{ width: '100px', height: '80px', objectFit: 'cover' }}
@@ -199,7 +187,7 @@ function EmployerJobs() {
                       </Badge>
                     </div>
                     <p className="text-muted mb-1" style={{ fontSize: '0.9rem' }}>
-                      {job.job_type} | {job.location?.address_text || 'N/A'} | Posted {timeAgo(job.createdAt)}
+                      {job.job_type} | {job.city || 'N/A'} | Posted {timeAgo(job.createdAt)}
                     </p>
                     <p className="text-secondary mb-0" style={{ fontSize: '0.9rem' }}>
                       {job.pay_type}: N{job.pay_rate_min} - N{job.pay_rate_max}
@@ -207,10 +195,9 @@ function EmployerJobs() {
                   </div>
                 </div>
 
-                {/* Applicants and Actions */}
                 <div className="ms-md-auto d-flex flex-column flex-md-row align-items-md-center justify-content-end w-100 w-md-auto">
                   <div className="d-flex flex-column align-items-md-end me-md-4 mb-3 mb-md-0 text-center text-md-end">
-                    <h4 className="mb-0 fw-bold">{job.applicants_count || 0}</h4>
+                    <h4 className="mb-0 fw-bold">{job.applicants_count || 0}</h4> {/* Assuming applicants_count is returned */}
                     <small className="text-muted">Applicants</small>
                     <Button
                       variant="link"

@@ -1,0 +1,236 @@
+// src/pages/JobApplicants.jsx
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Container, Row, Col, Card, Button, Spinner, Alert, ListGroup, Dropdown, DropdownButton, Badge } from 'react-bootstrap';
+import { useAuth } from '../contexts/AuthContext';
+import EmployerDashboardLayout from '../layouts/EmployerDashboardLayout'; // Assuming this layout exists
+import { FaDownload, FaEnvelope } from 'react-icons/fa'; // Icons for download and email
+import 'bootstrap/dist/css/bootstrap.min.css';
+
+const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
+
+function JobApplicants() {
+  const { jobId } = useParams();
+  const navigate = useNavigate();
+  const { user, token, isAuthenticated, loading: authLoading } = useAuth();
+
+  const [jobTitle, setJobTitle] = useState('');
+  const [applicants, setApplicants] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [updateStatusError, setUpdateStatusError] = useState(null);
+
+  const fetchApplicants = async () => {
+    if (authLoading || !isAuthenticated) {
+      if (!authLoading && !isAuthenticated) {
+        console.warn("Unauthorized access attempt to JobApplicants. Redirecting.");
+        navigate('/login');
+      }
+      setLoading(false);
+      return;
+    }
+
+    if (user?.user_type !== 'employer' && user?.user_type !== 'admin') {
+      console.warn("Forbidden access attempt to JobApplicants by non-employer/admin. Redirecting.");
+      navigate('/employer/dashboard'); // Or to a generic unauthorized page
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setUpdateStatusError(null);
+
+    try {
+      // Fetch applicants for this specific job
+      const response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}/applicants`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to fetch applicants.');
+      }
+
+      setJobTitle(data.jobTitle);
+      setApplicants(data.applications);
+
+    } catch (err) {
+      console.error("Error fetching job applicants:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchApplicants();
+  }, [jobId, user, token, isAuthenticated, authLoading, navigate]);
+
+  const handleStatusUpdate = async (applicationId, newStatus) => {
+    setUpdateStatusError(null);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/applications/${applicationId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to update application status.');
+      }
+
+      // Update the status in the local state
+      setApplicants(prevApplicants =>
+        prevApplicants.map(app =>
+          app._id === applicationId ? { ...app, status: newStatus } : app
+        )
+      );
+
+    } catch (err) {
+      console.error("Error updating application status:", err);
+      setUpdateStatusError(err.message);
+    }
+  };
+
+  if (loading || authLoading) {
+    return (
+      <EmployerDashboardLayout>
+        <Container fluid className="d-flex justify-content-center align-items-center py-5" style={{ minHeight: '60vh' }}>
+          <Spinner animation="border" role="status">
+            <span className="visually-hidden">Loading applicants...</span>
+          </Spinner>
+        </Container>
+      </EmployerDashboardLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <EmployerDashboardLayout>
+        <Container fluid className="py-5">
+          <Alert variant="danger">
+            <h4>Error loading applicants!</h4>
+            <p>{error}</p>
+            <Button onClick={() => navigate('/my-jobs')}>Back to My Jobs</Button>
+          </Alert>
+        </Container>
+      </EmployerDashboardLayout>
+    );
+  }
+
+  const getStatusVariant = (status) => {
+    switch (status) {
+      case 'Pending': return 'warning';
+      case 'Reviewed': return 'primary';
+      case 'Interview Scheduled': return 'info';
+      case 'Accepted': return 'success';
+      case 'Rejected': return 'danger';
+      default: return 'secondary';
+    }
+  };
+
+  return (
+    <EmployerDashboardLayout>
+      <Container fluid className="py-4 px-3 px-md-5">
+        <h3 className="mb-4 fw-bold">Applicants for "{jobTitle}"</h3>
+        <Button variant="secondary" className="mb-4" onClick={() => navigate('/my-jobs')}>
+          Back to My Jobs
+        </Button>
+
+        {updateStatusError && <Alert variant="danger">{updateStatusError}</Alert>}
+
+        {applicants.length === 0 ? (
+          <Card className="text-center py-5 shadow-sm border-0">
+            <Card.Body>
+              <h5 className="text-muted">No applicants for this job yet.</h5>
+            </Card.Body>
+          </Card>
+        ) : (
+          <Row xs={1} md={2} lg={3} className="g-4">
+            {applicants.map((application) => (
+              <Col key={application._id}>
+                <Card className="shadow-sm border-0 h-100 d-flex flex-column">
+                  <Card.Body className="d-flex flex-column">
+                    <Card.Title className="mb-2">{application.applicant_id?.full_name || 'N/A'}</Card.Title>
+                    <Card.Subtitle className="mb-2 text-muted small">
+                      {application.applicant_id?.username || 'N/A'}
+                    </Card.Subtitle>
+                    <ListGroup variant="flush" className="flex-grow-1">
+                      <ListGroup.Item className="px-0 py-1">Email: {application.applicant_id?.email || 'N/A'}</ListGroup.Item>
+                      <ListGroup.Item className="px-0 py-1">Phone: {application.applicant_id?.phone_number || 'N/A'}</ListGroup.Item>
+                      <ListGroup.Item className="px-0 py-1">Skills: {application.applicant_id?.skills?.join(', ') || 'N/A'}</ListGroup.Item>
+                      <ListGroup.Item className="px-0 py-1">
+                        Current Status: <Badge bg={getStatusVariant(application.status)} className="ms-1">{application.status}</Badge>
+                      </ListGroup.Item>
+                    </ListGroup>
+
+                    <div className="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                        <div>
+                            {application.resume_url && (
+                                <Button
+                                    variant="outline-secondary"
+                                    size="sm"
+                                    href={`${API_BASE_URL}${application.resume_url}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="me-2"
+                                >
+                                    <FaDownload /> Resume
+                                </Button>
+                            )}
+                            {application.cover_letter_url && (
+                                <Button
+                                    variant="outline-secondary"
+                                    size="sm"
+                                    href={`${API_BASE_URL}${application.cover_letter_url}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    <FaDownload /> Cover Letter
+                                </Button>
+                            )}
+                             {application.applicant_id?.email && (
+                                <Button
+                                    variant="outline-info"
+                                    size="sm"
+                                    href={`mailto:${application.applicant_id.email}`}
+                                    className="ms-2"
+                                >
+                                    <FaEnvelope /> Contact
+                                </Button>
+                            )}
+                        </div>
+                      <DropdownButton
+                        id={`dropdown-status-${application._id}`}
+                        title="Update Status"
+                        variant="outline-primary"
+                        size="sm"
+                        align="end"
+                      >
+                        <Dropdown.Item onClick={() => handleStatusUpdate(application._id, 'Pending')}>Pending</Dropdown.Item>
+                        <Dropdown.Item onClick={() => handleStatusUpdate(application._id, 'Reviewed')}>Reviewed</Dropdown.Item>
+                        <Dropdown.Item onClick={() => handleStatusUpdate(application._id, 'Interview Scheduled')}>Interview Scheduled</Dropdown.Item>
+                        <Dropdown.Item onClick={() => handleStatusUpdate(application._id, 'Accepted')}>Accepted</Dropdown.Item>
+                        <Dropdown.Item onClick={() => handleStatusUpdate(application._id, 'Rejected')}>Rejected</Dropdown.Item>
+                      </DropdownButton>
+                    </div>
+                    <p className="text-muted small mt-2 mb-0">Applied on: {new Date(application.createdAt).toLocaleDateString()}</p>
+                  </Card.Body>
+                </Card>
+              </Col>
+            ))}
+          </Row>
+        )}
+      </Container>
+    </EmployerDashboardLayout>
+  );
+}
+
+export default JobApplicants;

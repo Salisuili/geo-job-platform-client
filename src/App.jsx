@@ -14,13 +14,17 @@ import RatingsProfile from './pages/RatingsProfile';
 import PostJob from './pages/PostJob';
 import UserProfile from './pages/UserProfile';
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminEmployerList from './pages/admin/AdminEmployerList';
+import AdminLaborerList from './pages/admin/AdminLaborerList';
+import AdminJobListings from './pages/admin/AdminJobListings';
 import LoginPage from './pages/Login';
 import SignupPage from './pages/SignUp';
 import EmployerDashboard from './pages/EmployerDashboard';
 import LaborerList from './pages/LaborerList';
+import JobDetails from './pages/JobDetails'; // <--- NEW: Import JobDetails component
 
 const PrivateRoute = ({ children, allowedRoles }) => {
-  const { isAuthenticated, user, loading } = useAuth(); 
+  const { isAuthenticated, user, loading } = useAuth();
   if (loading) {
     return <div>Loading authentication...</div>;
   }
@@ -34,26 +38,28 @@ const PrivateRoute = ({ children, allowedRoles }) => {
   }
 
   if (allowedRoles && !allowedRoles.some(role => user.user_type === role)) {
-    return <Navigate to="/" replace />; 
+    return <Navigate to="/" replace />;
   }
   return children;
 };
 
 
 function AppContent() {
-  const { user } = useAuth(); 
+  const { user } = useAuth();
 
   return (
     <Routes>
       <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
       <Route path="/login" element={<PublicLayout><LoginPage /></PublicLayout>} />
       <Route path="/signup" element={<PublicLayout><SignupPage /></PublicLayout>} />
-      <Route path="/jobs" element={<PublicLayout><Home /></PublicLayout>} /> 
+      <Route path="/jobs" element={<PublicLayout><Home /></PublicLayout>} />
       <Route path="/services" element={<PublicLayout><div>Services Page Content</div></PublicLayout>} />
       <Route path="/about" element={<PublicLayout><div>About Us Page Content</div></PublicLayout>} />
       <Route path="/laborers/:laborerId" element={<RatingsProfile />} />
       <Route path="/dashboard" element={<PublicLayout><EmployerDashboard /></PublicLayout>} />
       <Route path="/laborers" element={<PublicLayout><LaborerList /></PublicLayout>} />
+      <Route path="/job/:id" element={<PublicLayout><JobDetails /></PublicLayout>} /> {/* <--- NEW: Route for JobDetails */}
+
 
       <Route path="/find-work" element={
         <PrivateRoute allowedRoles={['laborer', 'employer']}>
@@ -98,12 +104,27 @@ function AppContent() {
       {/* !!! IMPORTANT CHANGE HERE !!! */}
       <Route path="/admin/dashboard" element={
         <PrivateRoute allowedRoles={['admin']}>
-          <AdminDashboardLayout><AdminDashboard /></AdminDashboardLayout> {/* <<< CHANGED TO MainLayout */}
+          <AdminDashboardLayout><AdminDashboard /></AdminDashboardLayout>
         </PrivateRoute>
       } />
       <Route path="/admin/users" element={
         <PrivateRoute allowedRoles={['admin']}>
           <AdminDashboardLayout><div>Admin Users Management</div></AdminDashboardLayout>
+        </PrivateRoute>
+      } />
+      <Route path="/admin/employers" element={
+        <PrivateRoute allowedRoles={['admin']}>
+          <AdminDashboardLayout><AdminEmployerList /></AdminDashboardLayout>
+        </PrivateRoute>
+      } />
+      <Route path="/admin/laborers" element={
+        <PrivateRoute allowedRoles={['admin']}>
+          <AdminDashboardLayout><AdminLaborerList /></AdminDashboardLayout>
+        </PrivateRoute>
+      } />
+      <Route path="/admin/job-listings" element={
+        <PrivateRoute allowedRoles={['admin']}>
+          <AdminDashboardLayout><AdminJobListings /></AdminDashboardLayout>
         </PrivateRoute>
       } />
       <Route path="/admin/jobs" element={
