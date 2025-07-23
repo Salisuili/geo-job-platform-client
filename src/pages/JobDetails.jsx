@@ -60,7 +60,8 @@ function JobDetails() {
                 throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
             }
             const applications = await response.json();
-            const hasApplied = applications.some(app => app.job_id && app.job_id._id === id); // Check against job_id._id
+            // --- FIX: Check if applications is an array before calling .some() ---
+            const hasApplied = Array.isArray(applications) && applications.some(app => app.job_id && app.job_id._id === id);
             setApplicationStatus(hasApplied ? 'applied' : 'not_applied');
         } catch (err) {
             setError(`Failed to fetch application status: ${err.message}`);
@@ -197,8 +198,9 @@ function JobDetails() {
                         )}
                     </ListGroup>
 
+                    {/* --- FIX: HTML structure here --- */}
+                    <h4>Job Description:</h4>
                     <Card.Text>
-                        <h4>Job Description:</h4>
                         {job.description}
                     </Card.Text>
 
