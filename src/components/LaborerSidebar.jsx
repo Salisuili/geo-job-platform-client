@@ -1,54 +1,70 @@
 import React from 'react';
-import { Nav, Button } from 'react-bootstrap';
 import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext'; // Adjust path as needed
+import { Nav } from 'react-bootstrap';
+import { FaHome, FaFileAlt, FaUser } from 'react-icons/fa';
+import { useAuth } from '../contexts/AuthContext';
 
 function LaborerSidebar({ onLinkClick }) {
-    const { user, logout } = useAuth();
-    const location = useLocation();
+  const { user } = useAuth();
+  const location = useLocation();
 
-    const navLinks = [
-        { to: '/dashboard', label: 'Dashboard' },
-        { to: '/find-work', label: 'Find Work' },
-        { to: '/my-applications', label: 'My Applications' },
-        { to: '/messages', label: 'Messages' },
-        { to: '/notifications', label: 'Notifications' },
-        { to: '/profile', label: 'My Profile' },
-        // Add more laborer-specific links here
-    ];
+  const profileLink = user ? `/laborers/${user._id}` : '/profile';
 
-    // Function to check if a link is active, handling nested paths
-    const isActiveLink = (path) => {
-        // Special handling for dashboard, which might be the root of the laborer section
-        if (path === '/dashboard' && (location.pathname === '/dashboard' || location.pathname === '/')) {
-            return true;
-        }
-        // General check for direct match or if it's a parent of the current path
-        return location.pathname === path || location.pathname.startsWith(`${path}/`);
-    };
+  const navLinks = [
+    { to: '/dashboard', icon: <FaHome />, text: 'Dashboard' },
+    { to: '/my-applications', icon: <FaFileAlt />, text: 'My Applications' },
+    { to: profileLink, icon: <FaUser />, text: 'My Profile' },
+  ];
 
-    return (
-        <Nav className="flex-column flex-grow-1"> {/* flex-grow-1 ensures nav takes available space */}
-            {user && ( // Display welcome message only if user is logged in
-                <div className="mb-4 text-center">
-                    <h6 className="fw-bold mb-0">Welcome, {user?.full_name || 'Laborer'}</h6>
-                    <small className="text-muted">Laborer</small>
-                </div>
-            )}
-            {navLinks.map(link => (
-                <Nav.Link
-                    key={link.to}
-                    as={Link}
-                    to={link.to}
-                    onClick={onLinkClick} // Close offcanvas on link click
-                    className={`text-white py-2 ${isActiveLink(link.to) ? 'bg-primary rounded' : 'hover-bg-secondary'}`}
-                    style={{ '--bs-bg-opacity': '.25' }} // For hover effect on secondary background
-                >
-                    {link.label}
-                </Nav.Link>
-            ))}
+  const isNavLinkActive = (linkObject) => {
+    if (linkObject.to === '/dashboard') {
+      return location.pathname === '/dashboard' || location.pathname === '/';
+    }
+    if (linkObject.to.startsWith('/laborers/') && user?._id) {
+        return location.pathname === `/laborers/${user._id}`;
+    }
+    return location.pathname.startsWith(linkObject.to);
+  };
+
+  return (
+    <div className="d-flex flex-column h-100 p-3" style={{ width: '250px' }}>
+      <div style={{ overflowY: 'auto', flex: 1 }}>
+        <div className="d-flex mb-4">
+          <Link to="/" onClick={onLinkClick} style={{ textDecoration: 'none' }}>
+            <img
+              src={process.env.PUBLIC_URL + '/work_connect2.png'}
+              alt="WorkConnect Logo"
+              style={{ width: '180px', height: 'auto' }}
+            />
+          </Link>
+        </div>
+
+        <div className="mb-4">
+          <h6 className="fw-bold mb-0 text-truncate">Welcome</h6>
+          <small className="text-muted text-truncate">{user?.full_name || 'Laborer'}</small>
+        </div>
+
+        <Nav className="flex-column mb-3">
+          {navLinks.map((link) => (
+            <div key={link.to} className="nav-item-wrapper">
+              <Nav.Link
+                as={Link}
+                to={link.to}
+                onClick={onLinkClick}
+                className={`py-2 rounded d-flex align-items-center mb-2 ${
+                  isNavLinkActive(link) ? 'bg-primary text-white fw-bold' : 'text-dark'
+                }`}
+                style={{ width: '100%' }}
+              >
+                <span className="me-3" style={{ fontSize: '1.2rem' }}>{link.icon}</span>
+                {link.text}
+              </Nav.Link>
+            </div>
+          ))}
         </Nav>
-    );
+      </div>
+    </div>
+  );
 }
 
 export default LaborerSidebar;

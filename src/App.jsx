@@ -1,3 +1,4 @@
+// src/App.jsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
@@ -7,7 +8,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import MainLayout from './layouts/MainLayout';
 import PublicLayout from './layouts/PublicLayout';
 import AdminDashboardLayout from './layouts/AdminDashboardLayout';
-import LaborerDashboardLayout from './layouts/LaborerDashboardLayout'; // NEW: Import LaborerDashboardLayout
+import LaborerDashboardLayout from './layouts/LaborerDashboardLayout';
 
 import Home from './pages/Home';
 import EmployerJobs from './pages/EmployerJobs';
@@ -23,7 +24,9 @@ import SignupPage from './pages/SignUp';
 import EmployerDashboard from './pages/EmployerDashboard';
 import LaborerList from './pages/LaborerList';
 import JobDetails from './pages/JobDetails';
-import LaborerDashboard from './pages/LaborerDashboard'; // This is now correctly uncommented
+import LaborerDashboard from './pages/LaborerDashboard';
+import MyApplications from './pages/MyApplications'; 
+
 
 const PrivateRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, user, loading } = useAuth();
@@ -57,20 +60,19 @@ function AppContent() {
       <Route path="/jobs" element={<PublicLayout><Home /></PublicLayout>} />
       <Route path="/services" element={<PublicLayout><div>Services Page Content</div></PublicLayout>} />
       <Route path="/about" element={<PublicLayout><div>About Us Page Content</div></PublicLayout>} />
-      <Route path="/laborers/:laborerId" element={<RatingsProfile />} />
+      <Route path="/laborers/:laborerId" element={<UserProfile />} />
       <Route path="/laborers" element={<PublicLayout><LaborerList /></PublicLayout>} />
       <Route path="/job/:id" element={<PublicLayout><JobDetails /></PublicLayout>} />
 
-      {/* --- MODIFIED: Dashboard Route for both Employer and Laborer --- */}
+      {/* --- Dashboard Route for both Employer and Laborer --- */}
       <Route path="/dashboard" element={
         <PrivateRoute allowedRoles={['employer', 'laborer']}>
           {user && user.user_type === 'employer' ? (
             <MainLayout><EmployerDashboard /></MainLayout> // Employers use MainLayout
           ) : user && user.user_type === 'laborer' ? (
-            // Use LaborerDashboardLayout for laborers and render the LaborerDashboard component
-            <LaborerDashboardLayout><LaborerDashboard /></LaborerDashboardLayout>
+            <LaborerDashboardLayout><LaborerDashboard /></LaborerDashboardLayout> // Laborers use LaborerDashboardLayout
           ) : (
-            <Navigate to="/" replace /> // Fallback
+            <Navigate to="/" replace /> // Fallback for unexpected user type
           )}
         </PrivateRoute>
       } />
@@ -80,9 +82,15 @@ function AppContent() {
           <MainLayout><div>Find Work Page (Jobs Listing)</div></MainLayout>
         </PrivateRoute>
       } />
+      {/* --- CORRECTED: My Applications Route for Laborers --- */}
       <Route path="/my-applications" element={
         <PrivateRoute allowedRoles={['laborer']}>
-          <MainLayout><div>My Applications Page (for Laborers)</div></MainLayout>
+          <LaborerDashboardLayout><MyApplications /></LaborerDashboardLayout>
+        </PrivateRoute>
+      } />
+      <Route path="/fine-work" element={
+        <PrivateRoute allowedRoles={['laborer']}>
+          <LaborerDashboardLayout><Home /></LaborerDashboardLayout>
         </PrivateRoute>
       } />
       <Route path="/my-jobs" element={
@@ -90,16 +98,7 @@ function AppContent() {
           <MainLayout><EmployerJobs /></MainLayout>
         </PrivateRoute>
       } />
-      <Route path="/messages" element={
-        <PrivateRoute allowedRoles={['laborer', 'employer']}>
-          <MainLayout><div>Messages Page Content</div></MainLayout>
-        </PrivateRoute>
-      } />
-      <Route path="/notifications" element={
-        <PrivateRoute allowedRoles={['laborer', 'employer']}>
-          <MainLayout><div>Notifications Page Content</div></MainLayout>
-        </PrivateRoute>
-      } />
+      
       <Route path="/profile" element={
         <PrivateRoute allowedRoles={['laborer', 'employer']}>
           {user && user.user_type === 'laborer' ? (

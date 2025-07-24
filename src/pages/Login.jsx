@@ -42,7 +42,7 @@ const Login = () => {
       });
 
       const data = await response.json();
-      console.log("Login handleSubmit: API response data:", data);
+      
 
       if (response.ok) {
         login(data);

@@ -58,17 +58,17 @@ function PublicNavbar() {
           ) : (
             <>
               {user && user.user_type === 'laborer' && (
-                <Button as={Link} to="/laboradashboard" variant="outline-success" className="me-2 px-4 py-2">
-                  Job Seeker Dashboard
+                <Button as={Link} to="/dashboard" variant="outline-success" className="me-2 px-4 py-2">
+                  Dashboard
                 </Button>
               )}
               {user && user.user_type === 'employer' && (
-                <Button as={Link} to="/my-jobs" variant="outline-success" className="me-2 px-4 py-2">
-                  My Jobs
+                <Button as={Link} to="/dashboard" variant="outline-success" className="me-2 px-4 py-2">
+                  Dashboard
                 </Button>
               )}
               {user && user.user_type === 'admin' && (
-                <Button as={Link} to="/admin-dashboard" variant="outline-success" className="me-2 px-4 py-2">
+                <Button as={Link} to="/admin/dashboard" variant="outline-success" className="me-2 px-4 py-2">
                   Admin Dashboard
                 </Button>
               )}
