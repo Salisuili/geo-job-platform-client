@@ -1,7 +1,8 @@
+// src/components/AdminSidebar.jsx
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Nav, Button } from 'react-bootstrap';
-import { FaSignOutAlt, FaHome, FaUsers, FaBriefcase, FaChartBar, FaCog } from 'react-icons/fa';
+import { FaSignOutAlt, FaHome, FaUsers, FaBriefcase, FaChartBar, FaCog, FaBuilding, FaUserTie } from 'react-icons/fa'; // Added FaBuilding for employers, FaUserTie for laborers if desired, or stick to FaUsers
 import { useAuth } from '../contexts/AuthContext';
 
 function AdminSidebar({ onLinkClick }) {
@@ -10,8 +11,9 @@ function AdminSidebar({ onLinkClick }) {
 
   const navLinks = [
     { to: "/admin/dashboard", icon: <FaHome />, text: "Dashboard" },
-    { to: "/admin/users", icon: <FaUsers />, text: "Users" },
-    { to: "/admin/jobs", icon: <FaBriefcase />, text: "Jobs" },
+    { to: "/admin/employers", icon: <FaBuilding />, text: "Employers" }, // <--- UPDATED THIS LINE
+    { to: "/admin/laborers", icon: <FaUserTie />, text: "Laborers" },   // <--- UPDATED THIS LINE (or FaUsers)
+    { to: "/admin/job-listings", icon: <FaBriefcase />, text: "Job Listings" }, // Renamed from "Jobs" for clarity if AdminJobListings is the target
     { to: "/admin/reports", icon: <FaChartBar />, text: "Reports" },
     { to: "/admin/settings", icon: <FaCog />, text: "Settings" },
   ];
@@ -20,6 +22,17 @@ function AdminSidebar({ onLinkClick }) {
     if (path === "/admin/dashboard") {
       return location.pathname === path;
     }
+    // Special handling for the new specific admin paths
+    if (path === "/admin/employers" && location.pathname.startsWith("/admin/employers")) {
+        return true;
+    }
+    if (path === "/admin/laborers" && location.pathname.startsWith("/admin/laborers")) {
+        return true;
+    }
+    if (path === "/admin/job-listings" && location.pathname.startsWith("/admin/job-listings")) {
+        return true;
+    }
+    // For other generic admin paths
     return location.pathname.startsWith(path);
   };
 
@@ -30,9 +43,7 @@ function AdminSidebar({ onLinkClick }) {
 
   return (
     <div className="d-flex flex-column h-100">
-      {/* Scrollable Content */}
       <div style={{ overflowY: 'auto', flex: 1 }}>
-        {/* Logo Block */}
         <div className="d-flex mb-4">
           <img
             src={process.env.PUBLIC_URL + '/work_connect2.png'}
@@ -42,11 +53,10 @@ function AdminSidebar({ onLinkClick }) {
         </div>
 
         <div className="mb-4">
-          <h6 className="fw-bold mb-0">Welcome</h6>
+          <h6 className="fw-bold mb-0">Welcome, {user?.full_name || user?.username || 'Admin'}</h6> {/* Added username fallback */}
           <small className="text-muted">{user?.user_type === 'admin' ? 'Admin' : 'User'}</small>
         </div>
 
-        {/* Navigation */}
         <Nav className="flex-column mb-3">
           {navLinks.map((link) => (
             <Nav.Link
@@ -65,7 +75,6 @@ function AdminSidebar({ onLinkClick }) {
         </Nav>
       </div>
 
-      {/* Sticky Logout Button */}
       <div className="mt-auto p-3 bg-white border-top">
         <Button
           variant="outline-danger"

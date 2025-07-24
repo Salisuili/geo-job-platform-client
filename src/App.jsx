@@ -5,16 +5,22 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
-import MainLayout from './layouts/MainLayout';
+// Import all necessary layouts
 import PublicLayout from './layouts/PublicLayout';
 import AdminDashboardLayout from './layouts/AdminDashboardLayout';
 import LaborerDashboardLayout from './layouts/LaborerDashboardLayout';
+import EmployerDashboardLayout from './layouts/EmployerDashboardLayout';
+// If MainLayout is ONLY for public nav on public pages, and PublicLayout already handles that,
+// then MainLayout might be redundant or for a very specific non-dashboard authenticated scenario.
+// For now, let's assume all authenticated routes for employer/laborer should be dashboard-styled.
+// import MainLayout from './layouts/MainLayout'; // Potentially remove this import if not needed for authenticated users.
 
+// Import all page components
 import Home from './pages/Home';
 import EmployerJobs from './pages/EmployerJobs';
-import RatingsProfile from './pages/RatingsProfile';
+import RatingsProfile from './pages/RatingsProfile'; // Assumed Laborer's own profile component
 import PostJob from './pages/PostJob';
-import UserProfile from './pages/UserProfile';
+import UserProfile from './pages/UserProfile'; // Assumed Employer's own profile component OR a generic user profile viewer
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminEmployerList from './pages/admin/AdminEmployerList';
 import AdminLaborerList from './pages/admin/AdminLaborerList';
@@ -22,14 +28,16 @@ import AdminJobListings from './pages/admin/AdminJobListings';
 import LoginPage from './pages/Login';
 import SignupPage from './pages/SignUp';
 import EmployerDashboard from './pages/EmployerDashboard';
-import LaborerList from './pages/LaborerList';
+import LaborerList from './pages/LaborerList'; // For general laborer list view
 import JobDetails from './pages/JobDetails';
 import LaborerDashboard from './pages/LaborerDashboard';
-import MyApplications from './pages/MyApplications'; 
+import MyApplications from './pages/MyApplications';
 
 
+// PrivateRoute component for authentication and role-based access
 const PrivateRoute = ({ children, allowedRoles }) => {
   const { isAuthenticated, user, loading } = useAuth();
+
   if (loading) {
     return <div>Loading authentication...</div>;
   }
@@ -43,78 +51,131 @@ const PrivateRoute = ({ children, allowedRoles }) => {
   }
 
   if (allowedRoles && !allowedRoles.some(role => user.user_type === role)) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/" replace />; // Redirect to home if role not allowed
   }
   return children;
 };
 
 
+// AppContent component to define all routes
 function AppContent() {
-  const { user } = useAuth();
+  const { user } = useAuth(); // Get user from context to apply conditional layouts
 
   return (
     <Routes>
+      {/* --- Public Routes (Always use PublicLayout) --- */}
       <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
       <Route path="/login" element={<PublicLayout><LoginPage /></PublicLayout>} />
       <Route path="/signup" element={<PublicLayout><SignupPage /></PublicLayout>} />
-      <Route path="/jobs" element={<PublicLayout><Home /></PublicLayout>} />
+      <Route path="/jobs" element={<PublicLayout><Home /></PublicLayout>} /> {/* Assuming Home also lists jobs publicly */}
       <Route path="/services" element={<PublicLayout><div>Services Page Content</div></PublicLayout>} />
       <Route path="/about" element={<PublicLayout><div>About Us Page Content</div></PublicLayout>} />
-      <Route path="/laborers/:laborerId" element={<UserProfile />} />
+      {/* Public list of laborers - this route remains public */}
       <Route path="/laborers" element={<PublicLayout><LaborerList /></PublicLayout>} />
-      <Route path="/job/:id" element={<PublicLayout><JobDetails /></PublicLayout>} />
+      <Route path="/job/:id" element={<PublicLayout><JobDetails /></PublicLayout>} /> {/* Public job details */}
+      {/* Public view of a specific Laborer's profile by ID. If logged-in laborer views self, use /profile route */}
+      <Route path="/laborers/:laborerId" element={<PublicLayout><UserProfile /></PublicLayout>} />
 
-      {/* --- Dashboard Route for both Employer and Laborer --- */}
+
+      {/* --- Authenticated Routes with Conditional Dashboard Layouts --- */}
+
+      {/* Main Dashboard Route: Conditionally renders EmployerDashboardLayout or LaborerDashboardLayout */}
       <Route path="/dashboard" element={
         <PrivateRoute allowedRoles={['employer', 'laborer']}>
           {user && user.user_type === 'employer' ? (
-            <MainLayout><EmployerDashboard /></MainLayout> // Employers use MainLayout
+            <EmployerDashboardLayout><EmployerDashboard /></EmployerDashboardLayout>
           ) : user && user.user_type === 'laborer' ? (
-            <LaborerDashboardLayout><LaborerDashboard /></LaborerDashboardLayout> // Laborers use LaborerDashboardLayout
+            <LaborerDashboardLayout><LaborerDashboard /></LaborerDashboardLayout>
           ) : (
             <Navigate to="/" replace /> // Fallback for unexpected user type
           )}
         </PrivateRoute>
       } />
 
+      {/* Find Work Route: Conditionally renders EmployerDashboardLayout or LaborerDashboardLayout */}
+      {/* This page is for authenticated users looking for jobs/work. */}
       <Route path="/find-work" element={
         <PrivateRoute allowedRoles={['laborer', 'employer']}>
-          <MainLayout><div>Find Work Page (Jobs Listing)</div></MainLayout>
+          {user && user.user_type === 'employer' ? (
+            // Employers might view a list of laborers to hire, or general job trends
+            <EmployerDashboardLayout><div>Find Work Page (Jobs Listing)</div></EmployerDashboardLayout>
+          ) : user && user.user_type === 'laborer' ? (
+            // Laborers use Home as their 'Find Work' page, within their dashboard
+            <LaborerDashboardLayout><Home /></LaborerDashboardLayout>
+          ) : (
+            <Navigate to="/" replace />
+          )}
         </PrivateRoute>
       } />
-      {/* --- CORRECTED: My Applications Route for Laborers --- */}
+
+      {/* --- Employer Specific Protected Routes - ALL use EmployerDashboardLayout --- */}
+      <Route path="/my-jobs" element={
+        <PrivateRoute allowedRoles={['employer']}>
+          <EmployerDashboardLayout><EmployerJobs /></EmployerDashboardLayout>
+        </PrivateRoute>
+      } />
+      <Route path="/post-job" element={
+        <PrivateRoute allowedRoles={['employer']}>
+          <EmployerDashboardLayout><PostJob /></EmployerDashboardLayout>
+        </PrivateRoute>
+      } />
+      {/* Employer's own profile by ID, if you have a separate route for it (e.g., for settings/editing) */}
+      {/* Note: The /profile route below generally handles the logged-in user's profile */}
+      <Route path="/employers/:employerId" element={
+        <PrivateRoute allowedRoles={['employer']}>
+          <EmployerDashboardLayout><UserProfile /></EmployerDashboardLayout> {/* Assuming UserProfile is the employer's self-profile */}
+        </PrivateRoute>
+      } />
+      {/* Employer Payments and Settings */}
+      <Route path="/payments" element={
+        <PrivateRoute allowedRoles={['employer']}>
+          <EmployerDashboardLayout><div>Employer Payments Page</div></EmployerDashboardLayout>
+        </PrivateRoute>
+      } />
+      <Route path="/settings" element={
+        <PrivateRoute allowedRoles={['employer']}>
+          <EmployerDashboardLayout><div>Employer Settings Page</div></EmployerDashboardLayout>
+        </PrivateRoute>
+      } />
+
+      {/* NEW: Employer's view of LaborerList from their dashboard */}
+      <Route path="/employer/laborers" element={
+        <PrivateRoute allowedRoles={['employer']}>
+          <EmployerDashboardLayout><LaborerList /></EmployerDashboardLayout>
+        </PrivateRoute>
+      } />
+
+
+      {/* --- Laborer Specific Protected Routes - ALL use LaborerDashboardLayout --- */}
       <Route path="/my-applications" element={
         <PrivateRoute allowedRoles={['laborer']}>
           <LaborerDashboardLayout><MyApplications /></LaborerDashboardLayout>
         </PrivateRoute>
       } />
-      <Route path="/fine-work" element={
+      {/* If a laborer clicks a link within their dashboard to see a specific job detail, it should be within LaborerDashboardLayout */}
+      <Route path="/job-details/:id" element={ // Example, if different from public /job/:id
         <PrivateRoute allowedRoles={['laborer']}>
-          <LaborerDashboardLayout><Home /></LaborerDashboardLayout>
-        </PrivateRoute>
-      } />
-      <Route path="/my-jobs" element={
-        <PrivateRoute allowedRoles={['employer']}>
-          <MainLayout><EmployerJobs /></MainLayout>
-        </PrivateRoute>
-      } />
-      
-      <Route path="/profile" element={
-        <PrivateRoute allowedRoles={['laborer', 'employer']}>
-          {user && user.user_type === 'laborer' ? (
-            <MainLayout><RatingsProfile /></MainLayout>
-          ) : (
-            <MainLayout><UserProfile /></MainLayout>
-          )}
-        </PrivateRoute>
-      } />
-      <Route path="/post-job" element={
-        <PrivateRoute allowedRoles={['employer']}>
-          <MainLayout><PostJob /></MainLayout>
+          <LaborerDashboardLayout><JobDetails /></LaborerDashboardLayout>
         </PrivateRoute>
       } />
 
-      {/* Admin Routes */}
+
+      {/* --- Universal Profile Route (Logged-in user's own profile) --- */}
+      {/* This route dynamically renders the correct profile component within the correct dashboard layout */}
+      <Route path="/profile" element={
+        <PrivateRoute allowedRoles={['laborer', 'employer']}>
+          {user && user.user_type === 'laborer' ? (
+            <LaborerDashboardLayout><RatingsProfile /></LaborerDashboardLayout> // Laborer's own profile
+          ) : user && user.user_type === 'employer' ? (
+            <EmployerDashboardLayout><UserProfile /></EmployerDashboardLayout> // Employer's own profile
+          ) : (
+            <Navigate to="/" replace />
+          )}
+        </PrivateRoute>
+      } />
+
+
+      {/* --- Admin Routes (Always use AdminDashboardLayout) --- */}
       <Route path="/admin/dashboard" element={
         <PrivateRoute allowedRoles={['admin']}>
           <AdminDashboardLayout><AdminDashboard /></AdminDashboardLayout>
@@ -125,14 +186,16 @@ function AppContent() {
           <AdminDashboardLayout><div>Admin Users Management</div></AdminDashboardLayout>
         </PrivateRoute>
       } />
+      {/* Admin's view of LaborerList */}
+      <Route path="/admin/laborers" element={
+        <PrivateRoute allowedRoles={['admin']}>
+          <AdminDashboardLayout><LaborerList /></AdminDashboardLayout>
+        </PrivateRoute>
+      } />
+      {/* Admin's view of EmployerList */}
       <Route path="/admin/employers" element={
         <PrivateRoute allowedRoles={['admin']}>
           <AdminDashboardLayout><AdminEmployerList /></AdminDashboardLayout>
-        </PrivateRoute>
-      } />
-      <Route path="/admin/laborers" element={
-        <PrivateRoute allowedRoles={['admin']}>
-          <AdminDashboardLayout><AdminLaborerList /></AdminDashboardLayout>
         </PrivateRoute>
       } />
       <Route path="/admin/job-listings" element={
@@ -146,6 +209,7 @@ function AppContent() {
         </PrivateRoute>
       } />
 
+      {/* Fallback for any unmatched routes */}
       <Route path="*" element={<div>404 Not Found</div>} />
     </Routes>
   );

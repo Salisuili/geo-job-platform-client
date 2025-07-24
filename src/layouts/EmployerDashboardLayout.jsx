@@ -1,81 +1,107 @@
+// src/layouts/EmployerDashboardLayout.jsx
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Container, Button, Offcanvas, Navbar } from 'react-bootstrap';
-import { FaBars } from 'react-icons/fa';
+import { Container, Row, Col, Offcanvas, Button, Spinner } from 'react-bootstrap'; // Added Spinner
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate, Navigate, useLocation } from 'react-router-dom'; // Added useLocation
 
 import EmployerSidebar from '../components/EmployerSidebar';
 
 function EmployerDashboardLayout({ children }) {
-  const { logout, user } = useAuth(); // Destructure user to pass to sidebar
-  const location = useLocation();
-  const navigate = useNavigate();
+    const [showOffcanvas, setShowOffcanvas] = useState(false);
+    const { user, loading, logout } = useAuth(); // Destructure loading from useAuth
+    const navigate = useNavigate();
+    const location = useLocation(); // To close offcanvas on route change
 
-  const [showOffcanvas, setShowOffcanvas] = useState(false);
+    const handleCloseOffcanvas = () => setShowOffcanvas(false);
+    const handleShowOffcanvas = () => setShowOffcanvas(true);
 
-  const handleCloseOffcanvas = () => setShowOffcanvas(false);
-  const handleShowOffcanvas = () => setShowOffcanvas(true);
+    const handleLogout = async () => {
+        try {
+            await logout();
+            navigate('/login');
+        } catch (error) {
+            console.error('Logout failed:', error);
+            // Optionally, show an error message to the user
+        }
+    };
 
-  // Close offcanvas when route changes
-  useEffect(() => {
-    handleCloseOffcanvas();
-  }, [location.pathname]);
+    // Close offcanvas when route changes
+    useEffect(() => {
+        handleCloseOffcanvas();
+    }, [location.pathname]);
 
-  const handleLayoutLogout = () => {
-    logout();
-    handleCloseOffcanvas();
-    navigate('/login'); // Redirect to login after logout
-  };
 
-  return (
-    <div className="d-flex" style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
-      {/* Navbar for small screens (d-md-none means hidden on medium and up) */}
-      <Navbar expand="md" className="d-md-none bg-white shadow-sm w-100 position-fixed top-0" style={{ zIndex: 1030 }}>
-        <Container fluid>
-          <Button variant="light" onClick={handleShowOffcanvas} className="border-0 p-0 me-3">
-            <FaBars size={24} />
-          </Button>
-          <Navbar.Brand as={Link} to="/dashboard" className="fw-bold text-dark">
-            Local Labor
-          </Navbar.Brand>
-          {/* Optional: Add user info or logout button here for small screens if needed */}
-        </Container>
-      </Navbar>
+    // Show loading spinner while authentication is in progress
+    if (loading) {
+        return (
+            <Container className="text-center my-5">
+                <Spinner animation="border" role="status">
+                    <span className="visually-hidden">Loading User...</span>
+                </Spinner>
+            </Container>
+        );
+    }
 
-      {/* Sidebar for large screens (d-none means hidden by default, d-md-flex means flex on medium and up) */}
-      <div
-        className="d-none d-md-flex" // Hide by default, show as flex on medium screens and up
-        style={{
-          width: '280px', // Adjust sidebar width as needed
-          backgroundColor: '#fff',
-          borderRight: '1px solid #e9ecef',
-          padding: '2rem 1.5rem',
-          flexShrink: 0,
-          flexDirection: 'column',
-          height: '100vh', // Ensure it takes full height
-          position: 'sticky', // Makes it stick to the top
-          top: 0,
-        }}
-      >
-        <EmployerSidebar handleClose={handleCloseOffcanvas} /> {/* No need to pass user explicitly, useAuth will provide it */}
-      </div>
+    // Redirect if user is not authenticated or not an employer
+    if (!user || user.user_type !== 'employer') {
+        return <Navigate to="/login" replace />;
+    }
 
-      {/* Offcanvas for small screens */}
-      <Offcanvas show={showOffcanvas} onHide={handleCloseOffcanvas} placement="start" className="d-md-none">
-        <Offcanvas.Header closeButton>
-          <Offcanvas.Title className="fw-bold">Local Labor</Offcanvas.Title>
-        </Offcanvas.Header>
-        <Offcanvas.Body className="d-flex flex-column">
-          <EmployerSidebar handleClose={handleCloseOffcanvas} />
-        </Offcanvas.Body>
-      </Offcanvas>
+    return (
+        <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
+            {/* Desktop Sidebar */}
+            <div className="d-none d-md-flex flex-column bg-white" style={{ width: '250px', boxShadow: '2px 0 5px rgba(0,0,0,0.1)' }}>
+                <EmployerSidebar onLinkClick={handleCloseOffcanvas} />
+                <div className="p-3 border-top">
+                    <Button variant="outline-danger" className="w-100" onClick={handleLogout}>
+                        Logout
+                    </Button>
+                </div>
+            </div>
 
-      {/* Main Content Area */}
-      <div className="flex-grow-1" style={{ paddingTop: '56px' }}> {/* Add padding-top to account for fixed navbar on small screens */}
-        {children}
-      </div>
-    </div>
-  );
+            {/* Mobile Offcanvas (Sidebar) */}
+            <Offcanvas show={showOffcanvas} onHide={handleCloseOffcanvas} placement="start">
+                <Offcanvas.Header closeButton className="bg-primary text-white">
+                    <Offcanvas.Title>Menu</Offcanvas.Title>
+                </Offcanvas.Header>
+                <Offcanvas.Body className="p-0 d-flex flex-column">
+                    <EmployerSidebar onLinkClick={handleCloseOffcanvas} />
+                    {/* Logout button inside mobile offcanvas */}
+                    <div className="p-3 border-top">
+                        <Button variant="outline-danger" className="w-100" onClick={handleLogout}>
+                            Logout
+                        </Button>
+                    </div>
+                </Offcanvas.Body>
+            </Offcanvas>
+
+            {/* Main Content Area */}
+            <Container fluid className="p-0 flex-grow-1 d-flex flex-column">
+                {/* Top Bar for Welcome and Logout (responsive) */}
+                <Row className="bg-white shadow-sm p-3 align-items-center m-0"> {/* m-0 to remove default row margins */}
+                    <Col xs="auto" className="d-md-none"> {/* Hamburger menu for mobile */}
+                        <Button variant="outline-primary" onClick={handleShowOffcanvas}>
+                            ☰ Menu
+                        </Button>
+                    </Col>
+                    <Col> {/* Welcome Message */}
+                        <h4 className="m-0 text-truncate">Welcome, {user?.company_name || user?.full_name || 'Employer'}!</h4>
+                    </Col>
+                    <Col xs="auto" className="d-none d-md-block"> {/* Logout button for desktop */}
+                        <Button variant="outline-danger" onClick={handleLogout}>
+                            Logout
+                        </Button>
+                    </Col>
+                </Row>
+                {/* Content area */}
+                <Row className="flex-grow-1 p-3 m-0"> {/* m-0 to remove default row margins */}
+                    <Col>
+                        {children}
+                    </Col>
+                </Row>
+            </Container>
+        </div>
+    );
 }
 
 export default EmployerDashboardLayout;
