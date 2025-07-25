@@ -10,17 +10,12 @@ import PublicLayout from './layouts/PublicLayout';
 import AdminDashboardLayout from './layouts/AdminDashboardLayout';
 import LaborerDashboardLayout from './layouts/LaborerDashboardLayout';
 import EmployerDashboardLayout from './layouts/EmployerDashboardLayout';
-// If MainLayout is ONLY for public nav on public pages, and PublicLayout already handles that,
-// then MainLayout might be redundant or for a very specific non-dashboard authenticated scenario.
-// For now, let's assume all authenticated routes for employer/laborer should be dashboard-styled.
-// import MainLayout from './layouts/MainLayout'; // Potentially remove this import if not needed for authenticated users.
 
-// Import all page components
 import Home from './pages/Home';
 import EmployerJobs from './pages/EmployerJobs';
-import RatingsProfile from './pages/RatingsProfile'; // Assumed Laborer's own profile component
+import RatingsProfile from './pages/RatingsProfile';
 import PostJob from './pages/PostJob';
-import UserProfile from './pages/UserProfile'; // Assumed Employer's own profile component OR a generic user profile viewer
+import UserProfile from './pages/UserProfile';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminEmployerList from './pages/admin/AdminEmployerList';
 import AdminLaborerList from './pages/admin/AdminLaborerList';
@@ -28,11 +23,12 @@ import AdminJobListings from './pages/admin/AdminJobListings';
 import LoginPage from './pages/Login';
 import SignupPage from './pages/SignUp';
 import EmployerDashboard from './pages/EmployerDashboard';
-import LaborerList from './pages/LaborerList'; // For general laborer list view
+import LaborerList from './pages/LaborerList';
 import JobDetails from './pages/JobDetails';
 import LaborerDashboard from './pages/LaborerDashboard';
 import MyApplications from './pages/MyApplications';
-
+import JobApplicants from './pages/JobApplicants';
+import AllJobApplicationsOverview from './pages/AllJobApplicationsOverview'; // <--- NEW: Import the new component
 
 // PrivateRoute component for authentication and role-based access
 const PrivateRoute = ({ children, allowedRoles }) => {
@@ -138,10 +134,24 @@ function AppContent() {
         </PrivateRoute>
       } />
 
-      {/* NEW: Employer's view of LaborerList from their dashboard */}
+      {/* Employer's view of LaborerList from their dashboard */}
       <Route path="/employer/laborers" element={
         <PrivateRoute allowedRoles={['employer']}>
           <EmployerDashboardLayout><LaborerList /></EmployerDashboardLayout>
+        </PrivateRoute>
+      } />
+
+      {/* Route for Job Applicants (specific job) */}
+      <Route path="/employer/jobs/:jobId/applicants" element={
+        <PrivateRoute allowedRoles={['employer']}>
+          <EmployerDashboardLayout><JobApplicants /></EmployerDashboardLayout>
+        </PrivateRoute>
+      } />
+
+      {/* NEW: Route for the All Job Applications Overview page */}
+      <Route path="/employer/all-applicants" element={
+        <PrivateRoute allowedRoles={['employer']}>
+          <EmployerDashboardLayout><AllJobApplicationsOverview /></EmployerDashboardLayout> {/* <--- NEW ROUTE */}
         </PrivateRoute>
       } />
 

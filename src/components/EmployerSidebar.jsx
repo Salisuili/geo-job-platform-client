@@ -2,63 +2,76 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Nav } from 'react-bootstrap';
-import { FaHome, FaBriefcase, FaUsers, FaCreditCard, FaCog, FaUser } from 'react-icons/fa';
+// Import FaClipboardList for the new Applicants link
+import { FaHome, FaBriefcase, FaUsers, FaCreditCard, FaCog, FaUser, FaClipboardList } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 
 function EmployerSidebar({ onLinkClick }) {
   const { user } = useAuth();
   const location = useLocation();
 
-  // If user is not defined (e.g., still loading), default to a safe path for profileLink
-  const profileLink = user ? `/profile` : '/profile'; // Changed to '/profile' as it handles both types
-
   const navLinks = [
     { to: "/dashboard", icon: <FaHome />, text: "Dashboard" },
     { to: "/my-jobs", icon: <FaBriefcase />, text: "My Jobs" },
-    { to: "/employer/laborers", icon: <FaUsers />, text: "Laborers" }, // <--- UPDATED THIS LINE
+    // NEW: Link to a theoretical "All Applicants Overview" page
+    { to: "/employer/all-applicants", icon: <FaClipboardList />, text: "Applicants" }, // <--- NEW LINK ADDED
+    { to: "/employer/laborers", icon: <FaUsers />, text: "Find Laborers" },
     { to: "/payments", icon: <FaCreditCard />, text: "Payments" },
-    { to: "/settings", icon: <FaCog />, text: "Settings" },
-    { to: profileLink, icon: <FaUser />, text: "My Profile" },
+    { to: "/profile", icon: <FaUser />, text: "My Profile" },
   ];
 
-  const isNavLinkActive = (linkObject) => {
-    // Special handling for dashboard, allowing it to be active for base path
-    if (linkObject.to === '/dashboard') {
-      return location.pathname === '/dashboard' || location.pathname === '/';
+  const isNavLinkActive = (linkPath) => {
+    if (linkPath === '/dashboard') {
+      return location.pathname === linkPath || location.pathname === '/';
     }
-    // Handle generic /profile route for both user types
-    if (linkObject.to === '/profile' && location.pathname === '/profile') {
-      return true;
+    // Handle the new 'Applicants' link's active state
+    // It should be active if we are on /employer/all-applicants
+    // OR if we are on a specific job's applicants page (/employer/jobs/:jobId/applicants)
+    if (linkPath === '/employer/all-applicants') {
+      return location.pathname.startsWith('/employer/all-applicants') ||
+             location.pathname.startsWith('/employer/jobs/'); // This covers the specific JobApplicants page
     }
-    // Handle the specific employer/laborers route correctly
-    if (linkObject.to === '/employer/laborers' && location.pathname.startsWith('/employer/laborers')) {
-      return true;
-    }
-    // Fallback for other direct path matches
-    return location.pathname.startsWith(linkObject.to);
+    // General case for other links
+    return location.pathname.startsWith(linkPath);
   };
 
   return (
-    <>
+    <div className="d-flex flex-column h-100 p-3">
+      {/* Logo Block */}
+      <div className="d-flex mb-4">
+        <Link to="/" onClick={onLinkClick} style={{ textDecoration: 'none' }}>
+          <img
+            src={process.env.PUBLIC_URL + '/work_connect2.png'}
+            alt="WorkConnect Logo"
+            style={{ width: '180px', height: 'auto' }}
+          />
+        </Link>
+      </div>
+
+      {/* Welcome Message Block */}
       <div className="mb-4">
-        <h6 className="fw-bold mb-0">Welcome, {user?.full_name || user?.company_name || 'Employer'}</h6>
+        <h6 className="fw-bold mb-0">Welcome, {user?.company_name || user?.full_name || 'Employer'}</h6>
         <small className="text-muted">{user?.user_type === 'employer' ? 'Employer' : 'Admin'}</small>
       </div>
+
+      {/* Navigation */}
       <Nav className="flex-column flex-grow-1">
-        {navLinks.map(link => (
+        {navLinks.map((link) => (
           <Nav.Link
             key={link.to}
             as={Link}
             to={link.to}
-            onClick={onLinkClick} // Close offcanvas on link click
-            className={`py-2 rounded d-flex align-items-center mb-2 ${isNavLinkActive(link) ? 'bg-primary text-white fw-bold' : 'text-dark'}`}
-            style={{ width: '100%' }} // Ensure it matches laborer sidebar width style
+            onClick={onLinkClick}
+            className={`py-2 px-3 rounded d-flex align-items-center mb-2 ${
+              isNavLinkActive(link.to) ? 'bg-primary text-white fw-bold' : 'text-dark'
+            }`}
           >
-            <span className="me-3" style={{ fontSize: '1.2rem' }}>{link.icon}</span> {link.text}
+            <span className="me-3" style={{ fontSize: '1.2rem' }}>{link.icon}</span>
+            {link.text}
           </Nav.Link>
         ))}
       </Nav>
-    </>
+    </div>
   );
 }
 

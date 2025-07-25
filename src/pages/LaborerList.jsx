@@ -16,8 +16,7 @@ function LaborerList() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Define an async function inside useEffect
-    const fetchLaborers = async () => { // <--- ADDED 'async' HERE
+    const fetchLaborers = async () => {
       if (authLoading || !isAuthenticated || !token) {
         console.log("LaborerList: Authentication state not ready or token missing. Skipping fetch.");
         if (!authLoading && !isAuthenticated) {
@@ -69,11 +68,9 @@ function LaborerList() {
       }
     };
 
-    // Call the async function here
     fetchLaborers();
-  }, [user, token, isAuthenticated, authLoading, navigate, logout]); // Depend on auth state changes
+  }, [user, token, isAuthenticated, authLoading, navigate, logout]);
 
-  // --- Conditional Rendering (remains the same) ---
   if (authLoading || loading) {
     return (
       <Container fluid className="py-4 px-5 text-center flex-grow-1">
@@ -124,7 +121,15 @@ function LaborerList() {
             <Card className="shadow-sm border-0 h-100">
               <Card.Body className="d-flex flex-column align-items-center text-center">
                 <img
-                  src={laborer.profile_picture_url || 'https://via.placeholder.com/80'}
+                  // Corrected image source logic:
+                  // If profile_picture_url exists and is a relative path (doesn't start with http), prepend API_BASE_URL.
+                  // Otherwise, use profile_picture_url directly (which could be an absolute URL or null/undefined).
+                  // Fallback to a placeholder if profile_picture_url is null/undefined.
+                  src={
+                    laborer.profile_picture_url && !laborer.profile_picture_url.startsWith('http')
+                      ? `${API_BASE_URL}${laborer.profile_picture_url}`
+                      : laborer.profile_picture_url || 'https://via.placeholder.com/80' // Fallback if no URL
+                  }
                   alt={laborer.full_name || laborer.username || 'Laborer'}
                   className="rounded-circle mb-3"
                   style={{ width: '80px', height: '80px', objectFit: 'cover' }}

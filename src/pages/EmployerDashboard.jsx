@@ -3,7 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Container, Row, Col, Card, Spinner, Alert, Button } from 'react-bootstrap';
 import { FaBriefcase, FaUsers, FaChartLine } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
-// import EmployerDashboardLayout from '../layouts/EmployerDashboardLayout'; // REMOVE THIS IMPORT
 import { useAuth } from '../contexts/AuthContext';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
@@ -13,23 +12,23 @@ function EmployerDashboard() {
   const navigate = useNavigate();
 
   const [jobCount, setJobCount] = useState(0);
-  const [loadingJobCount, setLoadingJobCount] = useState(true);
-  const [errorJobCount, setErrorJobCount] = useState(null);
+  const [totalApplicantsCount, setTotalApplicantsCount] = useState(0);
+  const [loadingDashboardData, setLoadingDashboardData] = useState(true);
+  const [errorDashboardData, setErrorDashboardData] = useState(null);
 
-  // Effect to fetch the count of posted jobs
   useEffect(() => {
-    const fetchJobsCount = async () => {
+    const fetchDashboardData = async () => {
       if (authLoading || !isAuthenticated || !token) {
         if (!authLoading && !isAuthenticated) {
           logout();
           navigate('/login');
         }
-        setLoadingJobCount(false);
+        setLoadingDashboardData(false);
         return;
       }
 
-      setLoadingJobCount(true);
-      setErrorJobCount(null);
+      setLoadingDashboardData(true);
+      setErrorDashboardData(null);
 
       try {
         const response = await fetch(`${API_BASE_URL}/api/jobs/my-jobs`, {
@@ -40,7 +39,7 @@ function EmployerDashboard() {
         });
 
         if (response.status === 401 || response.status === 403) {
-          setErrorJobCount("Access denied: You don't have permission to view job data.");
+          setErrorDashboardData("Access denied: You don't have permission to view this data.");
           logout();
           navigate('/login');
           return;
@@ -48,28 +47,53 @@ function EmployerDashboard() {
 
         if (!response.ok) {
           const errorText = await response.text();
-          throw new Error(`Failed to fetch job count: ${response.status} - ${errorText || response.statusText}`);
+          throw new Error(`Failed to fetch dashboard data: ${response.status} - ${errorText || response.statusText}`);
         }
 
         const data = await response.json();
+
         setJobCount(data.length);
+
+        const calculatedTotalApplicants = data.reduce((sum, job) => sum + (job.applicants_count || 0), 0);
+        setTotalApplicantsCount(calculatedTotalApplicants);
+
       } catch (err) {
-        console.error("Error fetching job count:", err);
-        setErrorJobCount(err.message);
+        console.error("Error fetching dashboard data:", err);
+        setErrorDashboardData(err.message);
       } finally {
-        setLoadingJobCount(false);
+        setLoadingDashboardData(false);
       }
     };
 
-    fetchJobsCount();
+    fetchDashboardData();
   }, [user, token, isAuthenticated, authLoading, navigate, logout]);
 
+  if (authLoading || loadingDashboardData) {
+    return (
+      <Container fluid className="py-4 px-5 text-center flex-grow-1">
+        <Spinner animation="border" role="status" className="mt-5">
+          <span className="visually-hidden">Loading Dashboard...</span>
+        </Spinner>
+        <p className="mt-2">Loading dashboard data...</p>
+      </Container>
+    );
+  }
+
+  if (errorDashboardData) {
+    return (
+      <Container fluid className="py-4 px-5 flex-grow-1">
+        <Alert variant="danger" className="mt-5">
+          <Alert.Heading>Error loading dashboard!</Alert.Heading>
+          <p>{errorDashboardData}</p>
+        </Alert>
+      </Container>
+    );
+  }
+
   return (
-    // REMOVE THE <EmployerDashboardLayout> TAGS HERE
     <Container fluid className="py-4 px-5 flex-grow-1">
       <h3 className="mb-4 fw-bold">Employer Dashboard</h3>
       <Row className="mb-4">
-        {/* Card for Posted Jobs Count */}
         <Col md={6} lg={4} className="mb-4">
           <Card className="shadow-sm border-0 h-100">
             <Card.Body>
@@ -77,29 +101,17 @@ function EmployerDashboard() {
                 <FaBriefcase size={30} className="text-primary me-3" />
                 <h5 className="card-title mb-0">Posted Jobs</h5>
               </div>
-              {loadingJobCount ? (
-                <div className="text-center">
-                  <Spinner animation="border" size="sm" />
-                  <p className="mb-0 mt-2">Loading...</p>
-                </div>
-              ) : errorJobCount ? (
-                <Alert variant="danger" className="py-2 px-3 m-0">
-                  <small>Error: {errorJobCount}</small>
-                </Alert>
-              ) : (
-                <>
-                  <p className="card-text fs-2 fw-bold text-dark">{jobCount}</p>
-                  <p className="card-text text-muted">Total jobs you have posted.</p>
-                  <Link to="/my-jobs" className="btn btn-sm btn-outline-primary mt-2">
-                    View All Jobs
-                  </Link>
-                </>
-              )}
+              <>
+                <p className="card-text fs-2 fw-bold text-dark">{jobCount}</p>
+                <p className="card-text text-muted">Total jobs you have posted.</p>
+                <Link to="/my-jobs" className="btn btn-sm btn-outline-primary mt-2">
+                  View All Jobs
+                </Link>
+              </>
             </Card.Body>
           </Card>
         </Col>
 
-        {/* Example Card 2: Total Applicants (Placeholder - requires new API endpoint) */}
         <Col md={6} lg={4} className="mb-4">
           <Card className="shadow-sm border-0 h-100">
             <Card.Body>
@@ -107,16 +119,20 @@ function EmployerDashboard() {
                 <FaUsers size={30} className="text-info me-3" />
                 <h5 className="card-title mb-0">Total Applicants</h5>
               </div>
-              <p className="card-text fs-2 fw-bold text-dark">XX</p>
+              <p className="card-text fs-2 fw-bold text-dark">{totalApplicantsCount}</p>
               <p className="card-text text-muted">Across all your jobs.</p>
-              <Button variant="outline-info" size="sm" className="mt-2" disabled>
+              <Button
+                variant="outline-info"
+                size="sm"
+                className="mt-2"
+                onClick={() => navigate('/employer/all-applicants')}
+              >
                 Manage Applicants
               </Button>
             </Card.Body>
           </Card>
         </Col>
 
-        {/* Example Card 3: Performance Metrics (Placeholder) */}
         <Col md={6} lg={4} className="mb-4">
           <Card className="shadow-sm border-0 h-100">
             <Card.Body>
@@ -134,7 +150,6 @@ function EmployerDashboard() {
         </Col>
       </Row>
     </Container>
-    // REMOVE THE </EmployerDashboardLayout> TAGS HERE
   );
 }
 

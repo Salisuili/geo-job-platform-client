@@ -162,76 +162,103 @@ function EmployerJobs() {
         );
     }
 
-    return (
-        <Container fluid className="py-4 px-5 flex-grow-1">
-            <h3 className="mb-4 fw-bold">My Posted Jobs</h3>
-            {postedJobs.map((job) => (
-                <Card key={job._id} className="mb-3 shadow-sm border-0">
-                    <Card.Body> {/* Removed d-flex flex-column flex-md-row from Card.Body */}
-                        <Row className="align-items-center"> {/* Use Row for main layout */}
-                            {/* Job Image & Details Column */}
-                            <Col xs={12} md={7} lg={8} className="d-flex align-items-center mb-3 mb-md-0">
-                                <img
-                                    src={job.image_url ? `${API_BASE_URL}${job.image_url.startsWith('/uploads/') ? job.image_url : `/uploads/job_images/${job.image_url}`}` : `${API_BASE_URL}${DEFAULT_JOB_IMAGE_PATH}`}
-                                    alt={job.title}
-                                    className="rounded me-3"
-                                    style={{ width: '100px', height: '80px', objectFit: 'cover', flexShrink: 0 }} // flexShrink to prevent image from shrinking
-                                />
-                                <div>
-                                    <div className="d-flex flex-wrap align-items-center mb-1"> {/* flex-wrap for title and badge */}
-                                        <h5 className="mb-0 me-2 text-break">{job.title}</h5> {/* text-break for long titles */}
-                                        <Badge bg={job.status === 'Active' ? 'success' : job.status === 'Filled' ? 'info' : 'secondary'} className="text-uppercase" style={{ fontSize: '0.75em' }}>
-                                            {job.status}
-                                        </Badge>
-                                    </div>
-                                    <p className="text-muted mb-1" style={{ fontSize: '0.9rem' }}>
-                                        {job.job_type} | {job.city || 'N/A'} | Posted {timeAgo(job.createdAt)}
-                                    </p>
-                                    <p className="text-secondary mb-0" style={{ fontSize: '0.9rem' }}>
-                                        {job.pay_type}: N{job.pay_rate_min} - N{job.pay_rate_max}
-                                    </p>
-                                </div>
+    
+        return (
+            <Container fluid className="py-4 px-3 px-md-5 flex-grow-1"> {/* Improved responsive padding */}
+                <div className="d-flex justify-content-between align-items-center mb-4">
+                    <h3 className="mb-0 fw-bold">My Posted Jobs</h3>
+                    <Button variant="primary" size="sm" onClick={() => navigate('/post-job')}>
+                        Post New Job
+                    </Button>
+                </div>
+    
+                {postedJobs.length === 0 ? (
+                    <Card className="text-center py-5 shadow-sm border-0">
+                        <Card.Body>
+                            <h5 className="text-muted">You haven't posted any jobs yet.</h5>
+                            <Button variant="primary" className="mt-3" onClick={() => navigate('/post-job')}>
+                                Post a New Job
+                            </Button>
+                        </Card.Body>
+                    </Card>
+                ) : (
+                    <Row xs={1} md={1} lg={1} className="g-3"> {/* Grid system for better spacing */}
+                        {postedJobs.map((job) => (
+                            <Col key={job._id}>
+                                <Card className="shadow-sm border-0 h-100">
+                                    <Card.Body className="p-3">
+                                        <Row className="align-items-center">
+                                            {/* Job Image */}
+                                            <Col xs={3} md={2} lg={1} className="mb-3 mb-md-0">
+                                                <img
+                                                    src={job.image_url ? `${API_BASE_URL}${job.image_url.startsWith('/uploads/') ? job.image_url : `/uploads/job_images/${job.image_url}`}` : `${API_BASE_URL}${DEFAULT_JOB_IMAGE_PATH}`}
+                                                    alt={job.title}
+                                                    className="img-fluid rounded"
+                                                    style={{ width: '100%', height: '80px', objectFit: 'cover' }}
+                                                />
+                                            </Col>
+    
+                                            {/* Job Details */}
+                                            <Col xs={9} md={6} lg={7} className="mb-3 mb-md-0">
+                                                <div className="d-flex align-items-center mb-1">
+                                                    <h5 className="mb-0 me-2 text-truncate">{job.title}</h5>
+                                                    <Badge 
+                                                        bg={job.status === 'Active' ? 'success' : job.status === 'Filled' ? 'info' : 'secondary'} 
+                                                        className="text-uppercase" 
+                                                        style={{ fontSize: '0.75em' }}
+                                                    >
+                                                        {job.status}
+                                                    </Badge>
+                                                </div>
+                                                <p className="text-muted mb-1 small">
+                                                    {job.job_type} | {job.city || 'N/A'} | Posted {timeAgo(job.createdAt)}
+                                                </p>
+                                                <p className="text-secondary mb-0 small">
+                                                    {job.pay_type}: N{job.pay_rate_min} - N{job.pay_rate_max}
+                                                </p>
+                                            </Col>
+    
+                                            {/* Applicants Count */}
+                                            <Col xs={6} md={2} className="text-center mb-3 mb-md-0">
+                                                <h4 className="mb-0 fw-bold">{job.applicants_count || 0}</h4>
+                                                <small className="text-muted d-block">Applicants</small>
+                                                <Button
+                                                    variant="link"
+                                                    size="sm"
+                                                    onClick={() => handleViewApplicants(job._id)}
+                                                    className="p-0 mt-1 text-decoration-none small"
+                                                >
+                                                    View
+                                                </Button>
+                                            </Col>
+    
+                                            {/* Action Buttons */}
+                                            <Col xs={6} md={2} className="d-flex flex-column">
+                                                <Button
+                                                    variant="outline-secondary"
+                                                    size="sm"
+                                                    className="mb-2"
+                                                    onClick={() => handleEditJob(job._id)}
+                                                >
+                                                    Edit
+                                                </Button>
+                                                <Button
+                                                    variant="outline-danger"
+                                                    size="sm"
+                                                    onClick={() => handleDeleteJob(job._id)}
+                                                >
+                                                    Delete
+                                                </Button>
+                                            </Col>
+                                        </Row>
+                                    </Card.Body>
+                                </Card>
                             </Col>
-
-                            {/* Applicants Count Column */}
-                            <Col xs={6} md={2} lg={1} className="text-center text-md-end mb-3 mb-md-0">
-                                <h4 className="mb-0 fw-bold">{job.applicants_count || 0}</h4> {/* Ensure this data comes from backend */}
-                                <small className="text-muted d-block">Applicants</small>
-                                <Button
-                                    variant="link"
-                                    size="sm"
-                                    onClick={() => handleViewApplicants(job._id)}
-                                    className="p-0 mt-1 text-decoration-none" // Remove underline by default
-                                >
-                                    View Applicants
-                                </Button>
-                            </Col>
-
-                            {/* Action Buttons Column */}
-                            <Col xs={6} md={3} lg={3} className="d-flex flex-column flex-sm-row flex-md-column justify-content-end align-items-center align-items-md-end">
-                                <Button
-                                    variant="outline-secondary"
-                                    size="sm"
-                                    className="w-100 mb-2 mb-sm-0 me-sm-2 mb-md-2 me-md-0" // Control button width and margins
-                                    onClick={() => handleEditJob(job._id)}
-                                >
-                                    Edit
-                                </Button>
-                                <Button
-                                    variant="outline-danger"
-                                    size="sm"
-                                    className="w-100" // Control button width
-                                    onClick={() => handleDeleteJob(job._id)}
-                                >
-                                    Delete
-                                </Button>
-                            </Col>
-                        </Row>
-                    </Card.Body>
-                </Card>
-            ))}
-        </Container>
-    );
-}
-
-export default EmployerJobs;
+                        ))}
+                    </Row>
+                )}
+            </Container>
+        );
+    }
+    
+    export default EmployerJobs;
