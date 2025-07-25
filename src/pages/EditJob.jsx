@@ -6,6 +6,9 @@ import { useAuth } from '../contexts/AuthContext';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
+// Assuming this is the correct path based on your previous input
+const DEFAULT_JOB_IMAGE_PATH = '/uploads/geo_job_default.jpg';
+
 
 function EditJob() {
   const { jobId } = useParams(); // Get job ID from URL
@@ -37,7 +40,7 @@ function EditJob() {
     const fetchJobDetails = async () => {
       if (authLoading || !isAuthenticated || !token) {
         if (!authLoading && !isAuthenticated) {
-          console.warn("Unauthorized access attempt to EditJob. Redirecting.");
+          // No console.warn here, redirect silently
           navigate('/login');
         }
         setLoading(false);
@@ -46,7 +49,7 @@ function EditJob() {
 
       // Ensure only employer or admin can access this page
       if (user?.user_type !== 'employer' && user?.user_type !== 'admin') {
-        console.warn("Forbidden access attempt to EditJob by non-employer/admin. Redirecting.");
+        // No console.warn here, redirect silently
         navigate('/dashboard'); // Or to a generic unauthorized page
         setLoading(false);
         return;
@@ -79,7 +82,15 @@ function EditJob() {
         setPayType(job.pay_type || '');
         setApplicationDeadline(job.application_deadline ? new Date(job.application_deadline).toISOString().split('T')[0] : '');
         setRequiredSkills(job.required_skills ? job.required_skills.join(', ') : '');
-        setCurrentImageUrl(job.image_url ? `${API_BASE_URL}${job.image_url}` : ''); // Display current image
+        
+        // Corrected image URL logic for current image display
+        const fetchedImageUrl = job.image_url
+            ? (job.image_url === DEFAULT_JOB_IMAGE_PATH || job.image_url.startsWith('/uploads/'))
+                ? `${API_BASE_URL}${job.image_url}`
+                : `${API_BASE_URL}/uploads/job_images/${job.image_url}` // Fallback for old structure if needed
+            : `${API_BASE_URL}${DEFAULT_JOB_IMAGE_PATH}`;
+        setCurrentImageUrl(fetchedImageUrl);
+
         setJobStatus(job.status || 'Active');
 
       } catch (err) {
@@ -143,7 +154,7 @@ function EditJob() {
 
       if (response.ok) {
         setSuccess('Job updated successfully!');
-        alert('Job updated successfully!');
+        alert('Job updated successfully!'); // Using alert as per previous pattern, consider custom modal for better UX
         navigate('/my-jobs'); // Go back to employer's job list
       } else {
         setError(data.message || 'Failed to update job. Please try again.');
@@ -181,9 +192,14 @@ function EditJob() {
 
   return (
     <Container fluid className="py-4 px-5 flex-grow-1">
-      <h3 className="mb-4 fw-bold">Edit Job Posting</h3>
+      <div className="d-flex justify-content-between align-items-center mb-4">
+        <h3 className="mb-0 fw-bold">Edit Job Posting</h3>
+        <Button variant="outline-secondary" size="sm" onClick={() => navigate(-1)}>
+          Back
+        </Button>
+      </div>
 
-      {error && submitting && <div className="alert alert-danger mt-3">{error}</div>} {/* Show submission error */}
+      {error && submitting && <div className="alert alert-danger mt-3">{error}</div>}
       {success && <div className="alert alert-success mt-3">{success}</div>}
 
       <Form onSubmit={handleSubmit}>

@@ -171,9 +171,6 @@ function EmployerJobs() {
             <div className="d-flex justify-content-between align-items-center mb-4">
                 <h3 className="mb-0 fw-bold">My Posted Jobs</h3>
                 <div className="d-flex">
-                    <Button variant="outline-secondary" size="sm" className="me-2" onClick={() => navigate(-1)}>
-                        Back
-                    </Button>
                     <Button variant="primary" size="sm" onClick={() => navigate('/post-job')}>
                         Post New Job
                     </Button>
