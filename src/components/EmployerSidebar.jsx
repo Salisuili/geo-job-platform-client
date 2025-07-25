@@ -2,7 +2,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Nav } from 'react-bootstrap';
-// Import FaClipboardList for the new Applicants link
 import { FaHome, FaBriefcase, FaUsers, FaCreditCard, FaCog, FaUser, FaClipboardList } from 'react-icons/fa';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -13,8 +12,8 @@ function EmployerSidebar({ onLinkClick }) {
   const navLinks = [
     { to: "/dashboard", icon: <FaHome />, text: "Dashboard" },
     { to: "/my-jobs", icon: <FaBriefcase />, text: "My Jobs" },
-    // NEW: Link to a theoretical "All Applicants Overview" page
-    { to: "/employer/all-applicants", icon: <FaClipboardList />, text: "Applicants" }, // <--- NEW LINK ADDED
+    
+    { to: "/employer/all-applicants", icon: <FaClipboardList />, text: "Applicants" }, 
     { to: "/employer/laborers", icon: <FaUsers />, text: "Find Laborers" },
     { to: "/payments", icon: <FaCreditCard />, text: "Payments" },
     { to: "/profile", icon: <FaUser />, text: "My Profile" },
@@ -24,20 +23,17 @@ function EmployerSidebar({ onLinkClick }) {
     if (linkPath === '/dashboard') {
       return location.pathname === linkPath || location.pathname === '/';
     }
-    // Handle the new 'Applicants' link's active state
-    // It should be active if we are on /employer/all-applicants
-    // OR if we are on a specific job's applicants page (/employer/jobs/:jobId/applicants)
     if (linkPath === '/employer/all-applicants') {
       return location.pathname.startsWith('/employer/all-applicants') ||
-             location.pathname.startsWith('/employer/jobs/'); // This covers the specific JobApplicants page
+             location.pathname.startsWith('/employer/jobs/'); 
     }
-    // General case for other links
+    
     return location.pathname.startsWith(linkPath);
   };
 
   return (
     <div className="d-flex flex-column h-100 p-3">
-      {/* Logo Block */}
+    
       <div className="d-flex mb-4">
         <Link to="/" onClick={onLinkClick} style={{ textDecoration: 'none' }}>
           <img
@@ -48,7 +44,7 @@ function EmployerSidebar({ onLinkClick }) {
         </Link>
       </div>
 
-      {/* Welcome Message Block */}
+    
       <div className="mb-4">
         <h6 className="fw-bold mb-0">Welcome, {user?.company_name || user?.full_name || 'Employer'}</h6>
         <small className="text-muted">{user?.user_type === 'employer' ? 'Employer' : 'Admin'}</small>

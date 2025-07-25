@@ -28,7 +28,8 @@ import JobDetails from './pages/JobDetails';
 import LaborerDashboard from './pages/LaborerDashboard';
 import MyApplications from './pages/MyApplications';
 import JobApplicants from './pages/JobApplicants';
-import AllJobApplicationsOverview from './pages/AllJobApplicationsOverview'; // <--- NEW: Import the new component
+import AllJobApplicationsOverview from './pages/AllJobApplicationsOverview';
+import EditJob from './pages/EditJob'; // <--- NEW: Import the new EditJob component
 
 // PrivateRoute component for authentication and role-based access
 const PrivateRoute = ({ children, allowedRoles }) => {
@@ -151,7 +152,14 @@ function AppContent() {
       {/* NEW: Route for the All Job Applications Overview page */}
       <Route path="/employer/all-applicants" element={
         <PrivateRoute allowedRoles={['employer']}>
-          <EmployerDashboardLayout><AllJobApplicationsOverview /></EmployerDashboardLayout> {/* <--- NEW ROUTE */}
+          <EmployerDashboardLayout><AllJobApplicationsOverview /></EmployerDashboardLayout>
+        </PrivateRoute>
+      } />
+
+      {/* NEW: Route for the Edit Job page */}
+      <Route path="/employer/jobs/:jobId/edit" element={
+        <PrivateRoute allowedRoles={['employer', 'admin']}> {/* Both employer and admin can edit */}
+          <EmployerDashboardLayout><EditJob /></EmployerDashboardLayout>
         </PrivateRoute>
       } />
 

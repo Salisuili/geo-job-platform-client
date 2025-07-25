@@ -4,10 +4,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { Container, Button, Card, Badge, Spinner, Alert, Row, Col } from 'react-bootstrap';
 import { useAuth } from '../contexts/AuthContext';
-// import EmployerDashboardLayout from '../layouts/EmployerDashboardLayout'; // REMOVE THIS IMPORT (already removed, good!)
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
-const DEFAULT_JOB_IMAGE_PATH = '/uploads/job_images/geo_job_default.jpg';
+// CORRECTED: Default image is directly in /uploads/
+const DEFAULT_JOB_IMAGE_PATH = '/uploads/geo_job_default.jpg';
 
 function EmployerJobs() {
     const { user, token, isAuthenticated, loading: authLoading, logout } = useAuth();
@@ -16,9 +16,16 @@ function EmployerJobs() {
     const [loadingJobs, setLoadingJobs] = useState(true);
     const [error, setError] = useState(null);
 
-    const timeAgo = (date) => {
-        if (!date) return 'N/A';
-        const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+    const timeAgo = (dateInput) => {
+        if (!dateInput) return 'N/A';
+        const date = new Date(dateInput);
+        // Check if the date is valid
+        if (isNaN(date.getTime())) {
+            console.warn("Invalid date provided to timeAgo:", dateInput);
+            return 'N/A';
+        }
+
+        const seconds = Math.floor((new Date() - date) / 1000);
         let interval = seconds / 31536000;
         if (interval > 1) return Math.floor(interval) + " years ago";
         interval = seconds / 2592000;
@@ -49,9 +56,6 @@ function EmployerJobs() {
             setLoadingJobs(true);
             setError(null);
             try {
-                // Ensure your backend's /api/jobs/my-jobs endpoint is modified
-                // to include the applicants_count for each job.
-                // If it's not, this front-end change won't magically make it appear.
                 const response = await fetch(`${API_BASE_URL}/api/jobs/my-jobs`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -162,103 +166,106 @@ function EmployerJobs() {
         );
     }
 
-    
-        return (
-            <Container fluid className="py-4 px-3 px-md-5 flex-grow-1"> {/* Improved responsive padding */}
-                <div className="d-flex justify-content-between align-items-center mb-4">
-                    <h3 className="mb-0 fw-bold">My Posted Jobs</h3>
+    return (
+        <Container fluid className="py-4 px-3 px-md-5 flex-grow-1">
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <h3 className="mb-0 fw-bold">My Posted Jobs</h3>
+                <div className="d-flex">
+                    <Button variant="outline-secondary" size="sm" className="me-2" onClick={() => navigate(-1)}>
+                        Back
+                    </Button>
                     <Button variant="primary" size="sm" onClick={() => navigate('/post-job')}>
                         Post New Job
                     </Button>
                 </div>
-    
-                {postedJobs.length === 0 ? (
-                    <Card className="text-center py-5 shadow-sm border-0">
-                        <Card.Body>
-                            <h5 className="text-muted">You haven't posted any jobs yet.</h5>
-                            <Button variant="primary" className="mt-3" onClick={() => navigate('/post-job')}>
-                                Post a New Job
-                            </Button>
-                        </Card.Body>
-                    </Card>
-                ) : (
-                    <Row xs={1} md={1} lg={1} className="g-3"> {/* Grid system for better spacing */}
-                        {postedJobs.map((job) => (
-                            <Col key={job._id}>
-                                <Card className="shadow-sm border-0 h-100">
-                                    <Card.Body className="p-3">
-                                        <Row className="align-items-center">
-                                            {/* Job Image */}
-                                            <Col xs={3} md={2} lg={1} className="mb-3 mb-md-0">
-                                                <img
-                                                    src={job.image_url ? `${API_BASE_URL}${job.image_url.startsWith('/uploads/') ? job.image_url : `/uploads/job_images/${job.image_url}`}` : `${API_BASE_URL}${DEFAULT_JOB_IMAGE_PATH}`}
-                                                    alt={job.title}
-                                                    className="img-fluid rounded"
-                                                    style={{ width: '100%', height: '80px', objectFit: 'cover' }}
-                                                />
-                                            </Col>
-    
-                                            {/* Job Details */}
-                                            <Col xs={9} md={6} lg={7} className="mb-3 mb-md-0">
-                                                <div className="d-flex align-items-center mb-1">
-                                                    <h5 className="mb-0 me-2 text-truncate">{job.title}</h5>
-                                                    <Badge 
-                                                        bg={job.status === 'Active' ? 'success' : job.status === 'Filled' ? 'info' : 'secondary'} 
-                                                        className="text-uppercase" 
-                                                        style={{ fontSize: '0.75em' }}
-                                                    >
-                                                        {job.status}
-                                                    </Badge>
-                                                </div>
-                                                <p className="text-muted mb-1 small">
-                                                    {job.job_type} | {job.city || 'N/A'} | Posted {timeAgo(job.createdAt)}
-                                                </p>
-                                                <p className="text-secondary mb-0 small">
-                                                    {job.pay_type}: N{job.pay_rate_min} - N{job.pay_rate_max}
-                                                </p>
-                                            </Col>
-    
-                                            {/* Applicants Count */}
-                                            <Col xs={6} md={2} className="text-center mb-3 mb-md-0">
-                                                <h4 className="mb-0 fw-bold">{job.applicants_count || 0}</h4>
-                                                <small className="text-muted d-block">Applicants</small>
-                                                <Button
-                                                    variant="link"
-                                                    size="sm"
-                                                    onClick={() => handleViewApplicants(job._id)}
-                                                    className="p-0 mt-1 text-decoration-none small"
+            </div>
+
+            <Row xs={1} md={1} lg={1} className="g-3">
+                {postedJobs.map((job) => {
+                    const imageUrl = job.image_url
+                        ? (job.image_url === '/uploads/geo_job_default.jpg' || job.image_url.startsWith('/uploads/'))
+                            ? `${API_BASE_URL}${job.image_url}`
+                            : `${API_BASE_URL}/uploads/job_images/${job.image_url}`
+                        : `${API_BASE_URL}${DEFAULT_JOB_IMAGE_PATH}`;
+                    
+                    // Removed console.log for debugging image URLs
+
+                    return (
+                        <Col key={job._id}>
+                            <Card className="shadow-sm border-0 h-100">
+                                <Card.Body className="p-3">
+                                    <Row className="align-items-center">
+                                        {/* Job Image */}
+                                        <Col xs={3} md={2} lg={1} className="mb-3 mb-md-0">
+                                            <img
+                                                src={imageUrl}
+                                                alt={job.title}
+                                                className="img-fluid rounded"
+                                                style={{ width: '100%', height: '80px', objectFit: 'cover' }}
+                                            />
+                                        </Col>
+
+                                        {/* Job Details */}
+                                        <Col xs={9} md={6} lg={7} className="mb-3 mb-md-0">
+                                            <div className="d-flex align-items-center mb-1">
+                                                <h5 className="mb-0 me-2 text-truncate">{job.title}</h5>
+                                                <Badge
+                                                    bg={job.status === 'Active' ? 'success' : job.status === 'Filled' ? 'info' : 'secondary'}
+                                                    className="text-uppercase"
+                                                    style={{ fontSize: '0.75em' }}
                                                 >
-                                                    View
-                                                </Button>
-                                            </Col>
-    
-                                            {/* Action Buttons */}
-                                            <Col xs={6} md={2} className="d-flex flex-column">
-                                                <Button
-                                                    variant="outline-secondary"
-                                                    size="sm"
-                                                    className="mb-2"
-                                                    onClick={() => handleEditJob(job._id)}
-                                                >
-                                                    Edit
-                                                </Button>
-                                                <Button
-                                                    variant="outline-danger"
-                                                    size="sm"
-                                                    onClick={() => handleDeleteJob(job._id)}
-                                                >
-                                                    Delete
-                                                </Button>
-                                            </Col>
-                                        </Row>
-                                    </Card.Body>
-                                </Card>
-                            </Col>
-                        ))}
-                    </Row>
-                )}
-            </Container>
-        );
-    }
-    
-    export default EmployerJobs;
+                                                    {job.status}
+                                                </Badge>
+                                            </div>
+                                            <p className="text-muted mb-1 small">
+                                                {job.job_type} | {job.city || 'N/A'} | Posted {timeAgo(job.posted_at)}
+                                            </p>
+                                            <p className="text-secondary mb-0 small">
+                                                {job.pay_type}: N{job.pay_rate_min} - N{job.pay_rate_max}
+                                            </p>
+                                        </Col>
+
+                                        {/* Applicants Count */}
+                                        <Col xs={6} md={2} className="text-center mb-3 mb-md-0">
+                                            <h4 className="mb-0 fw-bold">{job.applicants_count || 0}</h4>
+                                            <small className="text-muted d-block">Applicants</small>
+                                            <Button
+                                                variant="link"
+                                                size="sm"
+                                                onClick={() => handleViewApplicants(job._id)}
+                                                className="p-0 mt-1 text-decoration-none small"
+                                            >
+                                                View
+                                            </Button>
+                                        </Col>
+
+                                        {/* Action Buttons */}
+                                        <Col xs={6} md={2} className="d-flex flex-column">
+                                            <Button
+                                                variant="outline-secondary"
+                                                size="sm"
+                                                className="mb-2"
+                                                onClick={() => handleEditJob(job._id)}
+                                            >
+                                                Edit
+                                            </Button>
+                                            <Button
+                                                variant="outline-danger"
+                                                size="sm"
+                                                onClick={() => handleDeleteJob(job._id)}
+                                            >
+                                                Delete
+                                            </Button>
+                                        </Col>
+                                    </Row>
+                                </Card.Body>
+                            </Card>
+                        </Col>
+                    );
+                })}
+            </Row>
+        </Container>
+    );
+}
+
+export default EmployerJobs;

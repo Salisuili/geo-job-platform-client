@@ -1,75 +1,117 @@
-// src/pages/PostJob.jsx
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+// src/pages/EditJob.jsx
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Container, Row, Col, Form, Button, Spinner, Alert } from 'react-bootstrap';
 import { useAuth } from '../contexts/AuthContext';
 import 'bootstrap/dist/css/bootstrap.min.css';
-// Removed unused Fa icons as the sidebar is no longer here
-// import { FaHome, FaBriefcase, FaUsers, FaCreditCard, FaCog } from 'react-icons/fa';
-
-import {
-  Container,
-  Row,
-  Col,
-  Form,
-  Button,
-  // Nav, // Nav is no longer needed here
-} from 'react-bootstrap';
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
 
-function PostJob() {
-  const { user, isAuthenticated } = useAuth();
+function EditJob() {
+  const { jobId } = useParams(); // Get job ID from URL
   const navigate = useNavigate();
+  const { user, token, isAuthenticated, loading: authLoading } = useAuth();
 
-  // State to manage all form inputs
+  // State to manage form inputs, initialized with empty values
   const [jobTitle, setJobTitle] = useState('');
   const [jobDescription, setJobDescription] = useState('');
   const [jobType, setJobType] = useState('');
-  const [city, setCity] = useState(''); // Human-readable city
+  const [city, setCity] = useState('');
   const [payRateMin, setPayRateMin] = useState('');
   const [payRateMax, setPayRateMax] = useState('');
   const [payType, setPayType] = useState('');
   const [applicationDeadline, setApplicationDeadline] = useState('');
-  const [requiredSkills, setRequiredSkills] = useState(''); // Input as comma-separated string
-  const [jobImageFile, setJobImageFile] = useState(null); // State for the actual file object
+  const [requiredSkills, setRequiredSkills] = useState('');
+  const [jobImageFile, setJobImageFile] = useState(null); // For new image upload
+  const [currentImageUrl, setCurrentImageUrl] = useState(''); // To display current image
+  const [jobStatus, setJobStatus] = useState('Active'); // Job status
 
   // UI feedback states
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true); // Initial loading for fetching job data
+  const [submitting, setSubmitting] = useState(false); // Loading for form submission
+  const [error, setError] = useState(null);
   const [success, setSuccess] = useState('');
 
-  // Effect to redirect if not authenticated or not an employer
-  React.useEffect(() => {
-    if (!isAuthenticated) {
-      alert("You need to log in to post a job.");
-      navigate('/login');
-    } else if (user && user.user_type !== 'employer' && user.user_type !== 'admin') {
-      alert("Only employers or admins can post jobs.");
-      navigate('/'); // Redirect to home or another appropriate page
-    }
-  }, [isAuthenticated, user, navigate]);
+  // Effect to fetch job details when component mounts or jobId changes
+  useEffect(() => {
+    const fetchJobDetails = async () => {
+      if (authLoading || !isAuthenticated || !token) {
+        if (!authLoading && !isAuthenticated) {
+          console.warn("Unauthorized access attempt to EditJob. Redirecting.");
+          navigate('/login');
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Ensure only employer or admin can access this page
+      if (user?.user_type !== 'employer' && user?.user_type !== 'admin') {
+        console.warn("Forbidden access attempt to EditJob by non-employer/admin. Redirecting.");
+        navigate('/dashboard'); // Or to a generic unauthorized page
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError(null);
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        const result = await response.json();
+
+        if (!response.ok) {
+          throw new Error(result.message || 'Failed to fetch job details.');
+        }
+
+        const job = result.job; // Assuming the backend returns { job, hasApplied }
+
+        // Populate form fields with fetched data
+        setJobTitle(job.title || '');
+        setJobDescription(job.description || '');
+        setJobType(job.job_type || '');
+        setCity(job.city || '');
+        setPayRateMin(job.pay_rate_min || '');
+        setPayRateMax(job.pay_rate_max || '');
+        setPayType(job.pay_type || '');
+        setApplicationDeadline(job.application_deadline ? new Date(job.application_deadline).toISOString().split('T')[0] : '');
+        setRequiredSkills(job.required_skills ? job.required_skills.join(', ') : '');
+        setCurrentImageUrl(job.image_url ? `${API_BASE_URL}${job.image_url}` : ''); // Display current image
+        setJobStatus(job.status || 'Active');
+
+      } catch (err) {
+        console.error("Error fetching job details:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchJobDetails();
+  }, [jobId, user, token, isAuthenticated, authLoading, navigate]);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setLoading(true);
+    setSubmitting(true);
     setError('');
     setSuccess('');
 
     // Basic validation
     if (!jobTitle || !jobDescription || !jobType || !city || !payRateMin || !payRateMax || !payType) {
-      setError('Please fill in all required fields, including the job city.');
-      setLoading(false);
+      setError('Please fill in all required fields.');
+      setSubmitting(false);
       return;
     }
-
     if (parseFloat(payRateMin) >= parseFloat(payRateMax)) {
       setError('Minimum pay rate must be less than maximum pay rate.');
-      setLoading(false);
+      setSubmitting(false);
       return;
     }
 
     const formData = new FormData();
-    formData.append('employer_id', user._id);
     formData.append('title', jobTitle);
     formData.append('description', jobDescription);
     formData.append('job_type', jobType);
@@ -84,17 +126,15 @@ function PostJob() {
       formData.append('required_skills', requiredSkills);
     }
     if (jobImageFile) {
-      formData.append('jobImage', jobImageFile);
+      formData.append('jobImage', jobImageFile); // Append new image file if selected
     }
-    formData.append('status', 'Active');
-
-    console.log("Form Data to Post:", formData);
+    formData.append('status', jobStatus); // Include job status
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/jobs`, {
-        method: 'POST',
+      const response = await fetch(`${API_BASE_URL}/api/jobs/${jobId}`, {
+        method: 'PUT', // Use PUT for updates
         headers: {
-          'Authorization': `Bearer ${user.token}`,
+          'Authorization': `Bearer ${token}`,
         },
         body: formData,
       });
@@ -102,43 +142,48 @@ function PostJob() {
       const data = await response.json();
 
       if (response.ok) {
-        setSuccess('Job posted successfully!');
-        alert('Job posted successfully!');
-        navigate('/my-jobs');
-        // Reset form fields after successful submission
-        setJobTitle('');
-        setJobDescription('');
-        setJobType('');
-        setCity('');
-        setPayRateMin('');
-        setPayRateMax('');
-        setPayType('');
-        setApplicationDeadline('');
-        setRequiredSkills('');
-        setJobImageFile(null);
+        setSuccess('Job updated successfully!');
+        alert('Job updated successfully!');
+        navigate('/my-jobs'); // Go back to employer's job list
       } else {
-        setError(data.message || 'Failed to post job. Please try again.');
+        setError(data.message || 'Failed to update job. Please try again.');
       }
     } catch (err) {
-      console.error('Network error during job posting:', err);
+      console.error('Network error during job update:', err);
       setError('Network error. Could not connect to the server.');
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
-  // Render nothing if not authenticated or not an employer (the useEffect handles redirect)
-  if (!user || (user.user_type !== 'employer' && user.user_type !== 'admin')) {
-      return null;
+  if (authLoading || loading) {
+    return (
+      <Container fluid className="py-4 px-5 text-center flex-grow-1">
+        <Spinner animation="border" role="status" className="mt-5">
+          <span className="visually-hidden">Loading job details...</span>
+        </Spinner>
+        <p className="mt-2">Loading job details for editing...</p>
+      </Container>
+    );
+  }
+
+  if (error && !submitting) { // Show error if fetching failed, or if submission failed
+    return (
+      <Container fluid className="py-4 px-5 flex-grow-1">
+        <Alert variant="danger" className="mt-5">
+          <Alert.Heading>Error loading job!</Alert.Heading>
+          <p>{error}</p>
+          <Button onClick={() => navigate('/my-jobs')}>Back to My Jobs</Button>
+        </Alert>
+      </Container>
+    );
   }
 
   return (
-    // Removed the outer div and hardcoded sidebar.
-    // This component now only renders its content, which will be placed inside EmployerDashboardLayout.
     <Container fluid className="py-4 px-5 flex-grow-1">
-      <h3 className="mb-4 fw-bold">Post a New Job</h3>
+      <h3 className="mb-4 fw-bold">Edit Job Posting</h3>
 
-      {error && <div className="alert alert-danger mt-3">{error}</div>}
+      {error && submitting && <div className="alert alert-danger mt-3">{error}</div>} {/* Show submission error */}
       {success && <div className="alert alert-success mt-3">{success}</div>}
 
       <Form onSubmit={handleSubmit}>
@@ -187,7 +232,7 @@ function PostJob() {
           </Form.Select>
         </Form.Group>
 
-        {/* Location Field - Only City */}
+        {/* Location Field - City */}
         <Form.Group className="mb-4" controlId="city">
           <Form.Label className="fw-bold">Job City</Form.Label>
           <Form.Control
@@ -274,28 +319,53 @@ function PostJob() {
           />
         </Form.Group>
 
+        {/* Current Job Image Display */}
+        {currentImageUrl && (
+          <Form.Group className="mb-4">
+            <Form.Label className="fw-bold">Current Job Image</Form.Label>
+            <div>
+              <img src={currentImageUrl} alt="Current Job" style={{ maxWidth: '200px', height: 'auto', borderRadius: '8px' }} />
+            </div>
+          </Form.Group>
+        )}
+
         {/* Job Image Upload Field */}
         <Form.Group className="mb-4" controlId="jobImage">
-          <Form.Label className="fw-bold">Job Image (Optional)</Form.Label>
+          <Form.Label className="fw-bold">Upload New Job Image (Optional)</Form.Label>
           <Form.Control
             type="file"
             accept="image/*"
             onChange={(e) => setJobImageFile(e.target.files[0])}
             style={{ backgroundColor: '#f0f2f5', border: '1px solid #e9ecef', padding: '0.75rem 1rem', borderRadius: '0.375rem' }}
           />
-          <small className="text-muted mt-1 d-block">Upload an image related to the job (e.g., a sample of the work).</small>
+          <small className="text-muted mt-1 d-block">Upload a new image to replace the current one.</small>
         </Form.Group>
 
-        {/* Post Job Button */}
+        {/* Job Status Dropdown */}
+        <Form.Group className="mb-4" controlId="jobStatus">
+          <Form.Label className="fw-bold">Job Status</Form.Label>
+          <Form.Select
+            value={jobStatus}
+            onChange={(e) => setJobStatus(e.target.value)}
+            required
+            style={{ backgroundColor: '#f0f2f5', border: '1px solid #e9ecef', padding: '0.75rem 1rem', borderRadius: '0.375rem' }}
+          >
+            <option value="Active">Active</option>
+            <option value="Filled">Filled</option>
+            <option value="Closed">Closed</option>
+          </Form.Select>
+        </Form.Group>
+
+        {/* Submit Button */}
         <div className="d-flex justify-content-end mt-5">
           <Button
             variant="primary"
             type="submit"
             className="px-5 py-2"
-            disabled={loading}
+            disabled={submitting}
             style={{ backgroundColor: '#0d6efd', borderColor: '#0d6efd', borderRadius: '0.375rem' }}
           >
-            {loading ? 'Posting Job...' : 'Post Job'}
+            {submitting ? 'Updating Job...' : 'Update Job'}
           </Button>
         </div>
       </Form>
@@ -303,4 +373,4 @@ function PostJob() {
   );
 }
 
-export default PostJob;
+export default EditJob;
