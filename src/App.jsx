@@ -15,11 +15,16 @@ import Home from './pages/Home';
 import EmployerJobs from './pages/EmployerJobs';
 import RatingsProfile from './pages/RatingsProfile';
 import PostJob from './pages/PostJob';
-import UserProfile from './pages/UserProfile';
+import UserProfile from './pages/UserProfile'; // This is the generic UserProfile
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminEmployerList from './pages/admin/AdminEmployerList';
 import AdminLaborerList from './pages/admin/AdminLaborerList';
 import AdminJobListings from './pages/admin/AdminJobListings';
+import AdminEditEmployer from './pages/admin/AdminEditEmployer';
+import AdminEditLaborer from './pages/admin/AdminEditLaborer';
+import AdminEditJob from './pages/admin/AdminEditJob';
+// NEW: Import the AdminProfile component
+import AdminProfile from './pages/admin/AdminProfile';
 import LoginPage from './pages/Login';
 import SignupPage from './pages/SignUp';
 import EmployerDashboard from './pages/EmployerDashboard';
@@ -29,7 +34,7 @@ import LaborerDashboard from './pages/LaborerDashboard';
 import MyApplications from './pages/MyApplications';
 import JobApplicants from './pages/JobApplicants';
 import AllJobApplicationsOverview from './pages/AllJobApplicationsOverview';
-import EditJob from './pages/EditJob'; // <--- NEW: Import the new EditJob component
+import EditJob from './pages/EditJob';
 
 // PrivateRoute component for authentication and role-based access
 const PrivateRoute = ({ children, allowedRoles }) => {
@@ -71,7 +76,9 @@ function AppContent() {
       <Route path="/laborers" element={<PublicLayout><LaborerList /></PublicLayout>} />
       <Route path="/job/:id" element={<PublicLayout><JobDetails /></PublicLayout>} /> {/* Public job details */}
       {/* Public view of a specific Laborer's profile by ID. If logged-in laborer views self, use /profile route */}
-      <Route path="/laborers/:laborerId" element={<PublicLayout><UserProfile /></PublicLayout>} />
+      <Route path="/laborers/:laborerId" element={
+        <PublicLayout><UserProfile /></PublicLayout> // This is for viewing other users' profiles publicly
+      } />
 
 
       {/* --- Authenticated Routes with Conditional Dashboard Layouts --- */}
@@ -156,7 +163,7 @@ function AppContent() {
         </PrivateRoute>
       } />
 
-      {/* NEW: Route for the Edit Job page */}
+      {/* NEW: Route for the Edit Job page (for employers) */}
       <Route path="/employer/jobs/:jobId/edit" element={
         <PrivateRoute allowedRoles={['employer', 'admin']}> {/* Both employer and admin can edit */}
           <EmployerDashboardLayout><EditJob /></EmployerDashboardLayout>
@@ -181,11 +188,13 @@ function AppContent() {
       {/* --- Universal Profile Route (Logged-in user's own profile) --- */}
       {/* This route dynamically renders the correct profile component within the correct dashboard layout */}
       <Route path="/profile" element={
-        <PrivateRoute allowedRoles={['laborer', 'employer']}>
+        <PrivateRoute allowedRoles={['laborer', 'employer', 'admin']}> {/* Added admin to allowed roles */}
           {user && user.user_type === 'laborer' ? (
             <LaborerDashboardLayout><RatingsProfile /></LaborerDashboardLayout> // Laborer's own profile
           ) : user && user.user_type === 'employer' ? (
             <EmployerDashboardLayout><UserProfile /></EmployerDashboardLayout> // Employer's own profile
+          ) : user && user.user_type === 'admin' ? (
+            <AdminDashboardLayout><AdminProfile /></AdminDashboardLayout> // Admin's own profile
           ) : (
             <Navigate to="/" replace />
           )}
@@ -207,7 +216,13 @@ function AppContent() {
       {/* Admin's view of LaborerList */}
       <Route path="/admin/laborers" element={
         <PrivateRoute allowedRoles={['admin']}>
-          <AdminDashboardLayout><LaborerList /></AdminDashboardLayout>
+          <AdminDashboardLayout><AdminLaborerList /></AdminDashboardLayout>
+        </PrivateRoute>
+      } />
+      {/* Admin's route for editing a laborer */}
+      <Route path="/admin/laborers/edit/:id" element={
+        <PrivateRoute allowedRoles={['admin']}>
+          <AdminDashboardLayout><AdminEditLaborer /></AdminDashboardLayout>
         </PrivateRoute>
       } />
       {/* Admin's view of EmployerList */}
@@ -216,9 +231,27 @@ function AppContent() {
           <AdminDashboardLayout><AdminEmployerList /></AdminDashboardLayout>
         </PrivateRoute>
       } />
+      {/* Admin's route for editing an employer */}
+      <Route path="/admin/employers/edit/:id" element={
+        <PrivateRoute allowedRoles={['admin']}>
+          <AdminDashboardLayout><AdminEditEmployer /></AdminDashboardLayout>
+        </PrivateRoute>
+      } />
       <Route path="/admin/job-listings" element={
         <PrivateRoute allowedRoles={['admin']}>
           <AdminDashboardLayout><AdminJobListings /></AdminDashboardLayout>
+        </PrivateRoute>
+      } />
+      {/* Admin's route for editing a job listing */}
+      <Route path="/admin/job-listings/edit/:id" element={
+        <PrivateRoute allowedRoles={['admin']}>
+          <AdminDashboardLayout><AdminEditJob /></AdminDashboardLayout>
+        </PrivateRoute>
+      } />
+      {/* NEW: Admin's own profile page */}
+      <Route path="/admin/profile" element={
+        <PrivateRoute allowedRoles={['admin']}>
+          <AdminDashboardLayout><AdminProfile /></AdminDashboardLayout>
         </PrivateRoute>
       } />
       <Route path="/admin/jobs" element={

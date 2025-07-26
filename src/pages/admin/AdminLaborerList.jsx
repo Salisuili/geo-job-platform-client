@@ -1,18 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Table, Button, Spinner, Alert, Form } from 'react-bootstrap';
-import { useAuth } from '../../contexts/AuthContext'; // Adjust path as needed
-import { FaEdit, FaTrash } from 'react-icons/fa'; // Import icons
+import { useAuth } from '../../contexts/AuthContext';
+import { FaEdit, FaTrash } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
 
 function AdminLaborerList() {
     const { token } = useAuth();
+    const navigate = useNavigate(); // Initialize useNavigate hook
     const [laborers, setLaborers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(10); // You can adjust this
+    const [itemsPerPage] = useState(10);
     const [totalPages, setTotalPages] = useState(0);
 
     const fetchLaborers = useCallback(async () => {
@@ -60,9 +62,8 @@ function AdminLaborerList() {
     };
 
     const handleEdit = (laborerId) => {
-        // Implement edit logic
-        console.log("Edit laborer:", laborerId);
-        alert(`Implement edit functionality for laborer ID: ${laborerId}`);
+        // Navigate to the new AdminEditLaborer page
+        navigate(`/admin/laborers/edit/${laborerId}`);
     };
 
     const handleDelete = async (laborerId) => {
@@ -121,7 +122,7 @@ function AdminLaborerList() {
                                 <th>Email</th>
                                 <th>Phone</th>
                                 <th>Skills</th>
-                                <th>Approved</th>
+                                {/* Removed 'Approved' column as it's not in the User model */}
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -132,7 +133,7 @@ function AdminLaborerList() {
                                     <td>{laborer.email}</td>
                                     <td>{laborer.phone_number}</td>
                                     <td>{laborer.skills && laborer.skills.length > 0 ? laborer.skills.join(', ') : 'N/A'}</td>
-                                    <td>{laborer.is_approved ? 'Yes' : 'No'}</td>
+                                    {/* Removed 'Approved' cell */}
                                     <td>
                                         <Button variant="outline-primary" size="sm" className="me-2" onClick={() => handleEdit(laborer._id)}>
                                             <FaEdit /> Edit

@@ -1,69 +1,103 @@
+// src/layouts/AdminDashboardLayout.jsx
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Container, Button, Offcanvas, Navbar } from 'react-bootstrap';
-import { FaBars } from 'react-icons/fa';
-import AdminSidebar from '../components/AdminSidebar';
+import { Outlet, useLocation, useNavigate, Navigate } from 'react-router-dom';
+import { Container, Row, Col, Button, Offcanvas, Spinner } from 'react-bootstrap';
+import { useAuth } from '../contexts/AuthContext';
+import AdminSidebar from '../components/AdminSidebar'; // Import the new AdminSidebar component
 
 function AdminDashboardLayout({ children }) {
-  const [showOffcanvas, setShowOffcanvas] = useState(false);
-  const location = useLocation();
+    const [showOffcanvas, setShowOffcanvas] = useState(false);
+    const { user, loading, logout } = useAuth();
+    const navigate = useNavigate();
+    const location = useLocation();
 
-  const handleCloseOffcanvas = () => setShowOffcanvas(false);
-  const handleShowOffcanvas = () => setShowOffcanvas(true);
+    const handleCloseOffcanvas = () => setShowOffcanvas(false);
+    const handleShowOffcanvas = () => setShowOffcanvas(true);
 
-  useEffect(() => {
-    handleCloseOffcanvas();
-  }, [location.pathname]);
+    const handleLogout = async () => {
+        try {
+            await logout();
+            navigate('/login');
+        } catch (error) {
+            console.error('Logout failed:', error);
+            // Optionally, show an error message to the user
+        }
+    };
 
-  return (
-    <div className="d-flex" style={{ backgroundColor: '#f8f9fa', minHeight: '100vh' }}>
-      {/* Mobile Navbar */}
-      <Navbar bg="white" className="d-md-none shadow-sm px-3" fixed="top">
-        <Button variant="light" onClick={handleShowOffcanvas} className="border-0 p-0">
-          <FaBars size={20} />
-        </Button>
-        <Navbar.Brand as={Link} to="/admin/dashboard" className="ms-3 fw-bold text-dark">Admin Panel</Navbar.Brand>
-      </Navbar>
+    // Close offcanvas when route changes
+    useEffect(() => {
+        handleCloseOffcanvas();
+    }, [location.pathname]);
 
-      {/* Desktop Sidebar */}
-      <div
-        className="d-none d-md-block"
-        style={{
-          width: '280px',
-          backgroundColor: '#fff',
-          borderRight: '1px solid #e0e0e0',
-          padding: '20px',
-          position: 'sticky',
-          top: 0,
-          height: '100vh',
-          overflowY: 'auto',
-        }}
-      >
-        <AdminSidebar />
-      </div>
+    // Show loading spinner while authentication is in progress
+    if (loading) {
+        return (
+            <Container className="text-center my-5">
+                <Spinner animation="border" role="status">
+                    <span className="visually-hidden">Loading User...</span>
+                </Spinner>
+            </Container>
+        );
+    }
 
-      {/* Mobile Offcanvas Sidebar */}
-      <Offcanvas 
-        show={showOffcanvas} 
-        onHide={handleCloseOffcanvas} 
-        placement="start" 
-        className="d-md-none"
-        style={{ width: '280px' }}
-      >
-        <Offcanvas.Header closeButton className="border-bottom">
-          <Offcanvas.Title className="fw-bold">Admin Menu</Offcanvas.Title>
-        </Offcanvas.Header>
-        <Offcanvas.Body className="p-0 d-flex flex-column">
-          <AdminSidebar onLinkClick={handleCloseOffcanvas} />
-        </Offcanvas.Body>
-      </Offcanvas>
+    // Redirect if user is not authenticated or not an admin
+    if (!user || user.user_type !== 'admin') {
+        return <Navigate to="/login" replace />;
+    }
 
-      {/* Main Content */}
-      <div className="flex-grow-1 p-4 pt-5 pt-md-0" style={{ overflowX: 'hidden' }}>
-        {children}
-      </div>
-    </div>
-  );
+    return (
+        <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#f8f9fa' }}>
+            {/* Desktop Sidebar */}
+            <div
+                className="d-none d-md-flex flex-column bg-white"
+                style={{
+                    width: '250px', // Adjusted width
+                    boxShadow: '2px 0 5px rgba(0,0,0,0.1)',
+                }}
+            >
+                {/* Use the external AdminSidebar component */}
+                <AdminSidebar onLinkClick={handleCloseOffcanvas} />
+            </div>
+
+            {/* Mobile Offcanvas (Sidebar) */}
+            <Offcanvas show={showOffcanvas} onHide={handleCloseOffcanvas} placement="start">
+                <Offcanvas.Header closeButton className="bg-primary text-white">
+                    <Offcanvas.Title>Admin Menu</Offcanvas.Title>
+                </Offcanvas.Header>
+                <Offcanvas.Body className="p-0 d-flex flex-column">
+                    {/* Use the external AdminSidebar component */}
+                    <AdminSidebar onLinkClick={handleCloseOffcanvas} />
+                </Offcanvas.Body>
+            </Offcanvas>
+
+            {/* Main Content Area */}
+            <Container fluid className="p-0 flex-grow-1 d-flex flex-column">
+                {/* Top Bar for Welcome and Logout (responsive) */}
+                <Row className="bg-white shadow-sm p-3 align-items-center m-0">
+                    <Col xs="auto" className="d-md-none">
+                        <Button variant="outline-primary" onClick={handleShowOffcanvas}>
+                            ☰ Menu
+                        </Button>
+                    </Col>
+                    <Col>
+                        {/* Display admin's name from user context */}
+                        <h4 className="m-0 text-truncate">Welcome, {user?.full_name || user?.username || 'Admin'}!</h4>
+                    </Col>
+                    <Col xs="auto" className="d-none d-md-block">
+                        <Button variant="outline-danger" onClick={handleLogout}>
+                            Logout
+                        </Button>
+                    </Col>
+                </Row>
+                {/* Content area */}
+                <Row className="flex-grow-1 p-3 m-0">
+                    <Col>
+                        {children || <Outlet />} {/* Render children passed or Outlet for nested routes */}
+                    </Col>
+                </Row>
+            </Container>
+        </div>
+    );
 }
 
 export default AdminDashboardLayout;

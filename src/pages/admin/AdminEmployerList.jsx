@@ -2,11 +2,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Container, Table, Button, Spinner, Alert, Form } from 'react-bootstrap';
 import { useAuth } from '../../contexts/AuthContext'; // Adjust path as needed
 import { FaEdit, FaTrash } from 'react-icons/fa'; // Import icons
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
 
 function AdminEmployerList() {
     const { token } = useAuth();
+    const navigate = useNavigate(); // Initialize useNavigate hook
     const [employers, setEmployers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -60,9 +62,8 @@ function AdminEmployerList() {
     };
 
     const handleEdit = (employerId) => {
-        // Implement edit logic, e.g., navigate to an edit page or open a modal
-        console.log("Edit employer:", employerId);
-        alert(`Implement edit functionality for employer ID: ${employerId}`);
+        // Navigate to the new AdminEditEmployer page
+        navigate(`/admin/employers/edit/${employerId}`);
     };
 
     const handleDelete = async (employerId) => {
@@ -121,7 +122,7 @@ function AdminEmployerList() {
                                 <th>Email</th>
                                 <th>Phone</th>
                                 <th>Address</th>
-                                <th>Approved</th>
+                                {/* Removed 'Approved' column as it's not in the model */}
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -132,7 +133,7 @@ function AdminEmployerList() {
                                     <td>{employer.email}</td>
                                     <td>{employer.phone_number}</td>
                                     <td>{employer.address_text || 'N/A'}</td>
-                                    <td>{employer.is_approved ? 'Yes' : 'No'}</td>
+                                    {/* Removed 'Approved' cell */}
                                     <td>
                                         <Button variant="outline-primary" size="sm" className="me-2" onClick={() => handleEdit(employer._id)}>
                                             <FaEdit /> Edit
