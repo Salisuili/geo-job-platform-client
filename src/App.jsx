@@ -49,6 +49,9 @@ const PrivateRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/login" replace />;
   }
 
+  // This check is generally safe here because isAuthenticated should be true if we reach here
+  // and AuthContext ensures user is not null if isAuthenticated is true.
+  // However, for absolute robustness and clarity, an explicit check doesn't hurt.
   if (!user) {
     return <Navigate to="/login" replace />;
   }
@@ -61,10 +64,10 @@ const PrivateRoute = ({ children, allowedRoles }) => {
 
 // New wrapper component to handle conditional layout for RatingsProfile
 const RatingsProfileRouteWrapper = () => {
-  const { user, isAuthenticated, loading } = useAuth();
+  const { user, isAuthenticated, loading } = useAuth(); // 'loading' here is authLoading
 
   if (loading) {
-    // You might want a more sophisticated loading indicator here
+    // Show a loading indicator while auth state is being determined
     return (
       <Container className="text-center my-5">
         <Spinner animation="border" role="status">
@@ -75,18 +78,26 @@ const RatingsProfileRouteWrapper = () => {
     );
   }
 
-  // If authenticated, determine layout based on user type
-  if (isAuthenticated) {
-    if (user.user_type === 'employer') {
-      return <EmployerDashboardLayout><RatingsProfile /></EmployerDashboardLayout>;
-    } else if (user.user_type === 'laborer') {
-      return <LaborerDashboardLayout><RatingsProfile /></LaborerDashboardLayout>;
-    } else if (user.user_type === 'admin') {
-      return <AdminDashboardLayout><RatingsProfile /></AdminDashboardLayout>;
-    }
+  // *** IMPORTANT CHANGE HERE ***
+  // If user is null (meaning not logged in or just logged out), render RatingsProfile within PublicLayout.
+  // This explicitly handles the case where isAuthenticated might be false or user is null.
+  if (!user) {
+    return <PublicLayout><RatingsProfile /></PublicLayout>;
   }
-  // If not authenticated, or user type does not match a specific dashboard, use PublicLayout
-  return <PublicLayout><RatingsProfile /></PublicLayout>;
+
+  // If we reach here, 'user' is guaranteed not null (and 'loading' is false).
+  // Now, it's safe to check user.user_type to determine the appropriate layout.
+  if (user.user_type === 'employer') {
+    return <EmployerDashboardLayout><RatingsProfile /></EmployerDashboardLayout>;
+  } else if (user.user_type === 'laborer') {
+    return <LaborerDashboardLayout><RatingsProfile /></LaborerDashboardLayout>;
+  } else if (user.user_type === 'admin') {
+    return <AdminDashboardLayout><RatingsProfile /></AdminDashboardLayout>;
+  }
+
+  // Fallback for any unexpected user types (should ideally not be reached)
+  console.warn("Unhandled user type in RatingsProfileRouteWrapper:", user.user_type);
+  return <PublicLayout><RatingsProfile /></PublicLayout>; // Default to PublicLayout
 };
 
 
@@ -108,7 +119,7 @@ function AppContent() {
       <Route path="/job/:id" element={<PublicLayout><JobDetails /></PublicLayout>} /> {/* Public job details */}
       {/* Public view of a specific Laborer's profile by ID. This route now uses the wrapper. */}
       <Route path="/laborers/:laborerId" element={
-        <RatingsProfileRouteWrapper /> 
+        <RatingsProfileRouteWrapper />
       } />
 
 

@@ -15,7 +15,6 @@ function EmployerSidebar({ onLinkClick }) {
     
     { to: "/employer/all-applicants", icon: <FaClipboardList />, text: "Applicants" }, 
     { to: "/employer/laborers", icon: <FaUsers />, text: "Find Laborers" },
-    { to: "/payments", icon: <FaCreditCard />, text: "Payments" },
     { to: "/profile", icon: <FaUser />, text: "My Profile" },
   ];
 

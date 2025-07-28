@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useContext } from 'react';
-import { useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { FaStar, FaRegThumbsUp, FaRegThumbsDown } from 'react-icons/fa';
+import { FaStar } from 'react-icons/fa'; // Only FaStar is needed now
 import {
   Container,
   Spinner,
@@ -14,7 +14,7 @@ import {
   Button,
 } from 'react-bootstrap';
 
-import { useAuth } from '../contexts/AuthContext'; 
+import { useAuth } from '../contexts/AuthContext';
 
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
@@ -37,17 +37,16 @@ const timeAgo = (dateString) => {
 
 function RatingsProfile() {
   const { laborerId } = useParams();
-  const { user } = useAuth(); // Get logged-in user from your actual context
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
 
   const [laborerData, setLaborerData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // State for the new rating form
-  const [currentRating, setCurrentRating] = useState(0); // For star selection
-  const [hoverRating, setHoverRating] = useState(0); // For hover effect on stars
+  const [currentRating, setCurrentRating] = useState(0);
+  const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
-  const [jobId, setJobId] = useState(''); // Optional: if you link rating to a job
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -57,7 +56,7 @@ function RatingsProfile() {
     setError(null);
     try {
       const response = await fetch(`${API_BASE_URL}/api/laborers/${laborerId}`);
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         let errorMessage = `HTTP error! status: ${response.status}`;
@@ -69,7 +68,7 @@ function RatingsProfile() {
         }
         throw new Error(errorMessage);
       }
-      
+
       const data = await response.json();
       setLaborerData(data.laborer);
     } catch (err) {
@@ -86,8 +85,10 @@ function RatingsProfile() {
       setLoading(false);
       return;
     }
-    fetchLaborerProfile();
-  }, [laborerId]);
+    if (!authLoading) {
+      fetchLaborerProfile();
+    }
+  }, [laborerId, authLoading]);
 
   const handleRatingSubmit = async (e) => {
     e.preventDefault();
@@ -101,9 +102,10 @@ function RatingsProfile() {
       return;
     }
 
-    if (!user || !user._id || !user.token) {
+    if (!isAuthenticated || !user || !user._id || !user.token) {
         setSubmitError("You must be logged in to submit a rating.");
         setSubmitLoading(false);
+        navigate('/login');
         return;
     }
 
@@ -113,14 +115,13 @@ function RatingsProfile() {
         target_id: laborerId,
         rating: currentRating,
         comment: comment,
-        // job_id: jobId, // Include if you have a way to select a job_id here
       };
 
       const response = await fetch(`${API_BASE_URL}/api/ratings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${user.token}`, // Send the JWT token
+          'Authorization': `Bearer ${user.token}`,
         },
         body: JSON.stringify(ratingData),
       });
@@ -140,9 +141,7 @@ function RatingsProfile() {
       setSubmitSuccess(true);
       setComment('');
       setCurrentRating(0);
-      setJobId('');
-      // Re-fetch laborer profile to update ratings displayed
-      await fetchLaborerProfile();
+      await fetchLaborerProfile(); // Re-fetch to update reviews
     } catch (err) {
       console.error("Error submitting rating:", err);
       setSubmitError(err.message || "An unexpected error occurred.");
@@ -151,14 +150,35 @@ function RatingsProfile() {
     }
   };
 
-  // Add this console.log to debug the user object
-  console.log("Current logged-in user in RatingsProfile:", user);
+  console.log("RatingsProfile State: User:", user, "isAuthenticated:", isAuthenticated, "authLoading:", authLoading, "LaborerDataLoading:", loading);
 
+  // --- Start: Crucial Render Order for Authentication ---
+
+  // 1. If authentication state is still being loaded, show a general loading indicator.
+  // This is the most important check to prevent accessing 'user' prematurely.
+  if (authLoading) {
+    return (
+      <Container className="my-5 text-center">
+        <Spinner animation="border" role="status">
+          <span className="visually-hidden">Loading authentication status...</span>
+        </Spinner>
+        <p className="mt-2">Checking user authentication status...</p>
+      </Container>
+    );
+  }
+
+  // 2. Now that authLoading is false, we can safely determine user roles.
+  // user will now be either a valid object or null, consistently.
+  const isEmployer = user?.user_type === 'employer';
+  const isLaborerSelf = user && user.user_type === 'laborer' && user._id === laborerId;
+
+
+  // 3. Handle loading/error for the laborer profile data itself (separate from auth loading).
   if (loading) {
     return (
       <Container className="my-5 text-center">
         <Spinner animation="border" role="status">
-          <span className="visually-hidden">Loading...</span>
+          <span className="visually-hidden">Loading laborer profile...</span>
         </Spinner>
         <p className="mt-2">Loading laborer profile...</p>
       </Container>
@@ -188,11 +208,11 @@ function RatingsProfile() {
     );
   }
 
-  const profileName = laborerData.full_name || laborerData.username || 'Laborer';
+  // --- End: Crucial Render Order ---
 
-  // MODIFIED: Construct profilePic using API_BASE_URL for consistency
-  const profilePic = laborerData.profile_picture_url 
-    ? `${API_BASE_URL}${laborerData.profile_picture_url}` 
+  const profileName = laborerData.full_name || laborerData.username || 'Laborer';
+  const profilePic = laborerData.profile_picture_url
+    ? `${API_BASE_URL}${laborerData.profile_picture_url}`
     : 'https://via.placeholder.com/80x80?text=NA';
 
   const profileDescription = laborerData.bio || (laborerData.skills && laborerData.skills.length > 0 ? laborerData.skills.join(', ') : 'No description available.');
@@ -203,12 +223,7 @@ function RatingsProfile() {
   const ratingDistribution = Array.isArray(laborerData.ratingDistribution) ? laborerData.ratingDistribution : [];
   const reviews = Array.isArray(laborerData.reviews) ? laborerData.reviews : [];
 
-  const isEmployer = user && user.user_type === 'employer';
-  const isLaborerSelf = user && user.user_type === 'laborer' && user._id === laborerId;
-
-
   return (
-
     <Container className="my-4">
       <Row className="justify-content-center">
         <Col lg={8}>
@@ -216,7 +231,7 @@ function RatingsProfile() {
           <Card className="mb-4 shadow-sm border-0">
             <Card.Body className="d-flex align-items-center">
               <img
-                src={profilePic} // This now correctly uses the constructed URL
+                src={profilePic}
                 alt={profileName}
                 className="rounded-circle me-3"
                 style={{ width: '80px', height: '80px', objectFit: 'cover' }}
@@ -263,7 +278,7 @@ function RatingsProfile() {
           </Card>
 
           {/* Rate Laborer Section (Employer Only, Not Self) */}
-          {isEmployer && !isLaborerSelf && (
+          {isAuthenticated && isEmployer && !isLaborerSelf && (
             <Card className="mb-4 shadow-sm border-0">
               <Card.Body>
                 <h5 className="mb-3">Rate {profileName}</h5>
@@ -300,11 +315,6 @@ function RatingsProfile() {
                       maxLength={500}
                     />
                   </Form.Group>
-                  {/* If job_id is required, you'd add a selector here, e.g.: */}
-                  {/* <Form.Group className="mb-3" controlId="jobId">
-                          <Form.Label>Associated Job (Optional):</Form.Label>
-                          <Form.Control type="text" placeholder="Enter Job ID" value={jobId} onChange={(e) => setJobId(e.target.value)} />
-                      </Form.Group> */}
                   <Button variant="primary" type="submit" disabled={submitLoading}>
                     {submitLoading ? <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" /> : 'Submit Rating'}
                   </Button>
@@ -312,12 +322,11 @@ function RatingsProfile() {
               </Card.Body>
             </Card>
           )}
-          {!isEmployer && (
+          {(!isAuthenticated || !isEmployer) && (
               <Alert variant="info" className="text-center mb-4 shadow-sm border-0">
-                 <p className="mb-0">Only logged-in employers can submit ratings for this laborer.</p>
+                  <p className="mb-0">Only logged-in employers can submit ratings for this laborer.</p>
               </Alert>
           )}
-
 
           {/* Existing Reviews Section */}
           <h5 className="mb-3">Reviews ({reviews.length})</h5>
@@ -329,8 +338,8 @@ function RatingsProfile() {
                 <Card.Body>
                   <div className="d-flex align-items-center mb-2">
                     <img
-                      src={review.reviewer?.profile_picture_url 
-                        ? `${API_BASE_URL}${review.reviewer.profile_picture_url}` // MODIFIED: Construct reviewer pic URL
+                      src={review.reviewer?.profile_picture_url
+                        ? `${API_BASE_URL}${review.reviewer.profile_picture_url}`
                         : 'https://via.placeholder.com/40x40?text=NA'}
                       alt={review.reviewer?.full_name || 'Anonymous'}
                       className="rounded-circle me-2"
@@ -351,10 +360,7 @@ function RatingsProfile() {
                     ))}
                   </div>
                   <Card.Text className="mb-3">{review.comment || 'No comment provided.'}</Card.Text>
-                  <div className="d-flex align-items-center text-muted" style={{ fontSize: '0.9rem' }}>
-                    <FaRegThumbsUp className="me-1" /> {review.likes}
-                    <FaRegThumbsDown className="ms-3 me-1" /> {review.dislikes}
-                  </div>
+                  {/* The thumbs-up/thumbs-down section has been removed */}
                 </Card.Body>
               </Card>
             ))
@@ -362,7 +368,6 @@ function RatingsProfile() {
         </Col>
       </Row>
     </Container>
-    // </div> // This closing div will be handled by Layout
   );
 }
 
