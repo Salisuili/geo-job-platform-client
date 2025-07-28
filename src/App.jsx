@@ -2,6 +2,7 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import { Container, Spinner } from 'react-bootstrap'; // Added Container and Spinner imports
 
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 
@@ -58,6 +59,36 @@ const PrivateRoute = ({ children, allowedRoles }) => {
   return children;
 };
 
+// New wrapper component to handle conditional layout for RatingsProfile
+const RatingsProfileRouteWrapper = () => {
+  const { user, isAuthenticated, loading } = useAuth();
+
+  if (loading) {
+    // You might want a more sophisticated loading indicator here
+    return (
+      <Container className="text-center my-5">
+        <Spinner animation="border" role="status">
+          <span className="visually-hidden">Loading User Data...</span>
+        </Spinner>
+        <p className="mt-2">Preparing profile view...</p>
+      </Container>
+    );
+  }
+
+  // If authenticated, determine layout based on user type
+  if (isAuthenticated) {
+    if (user.user_type === 'employer') {
+      return <EmployerDashboardLayout><RatingsProfile /></EmployerDashboardLayout>;
+    } else if (user.user_type === 'laborer') {
+      return <LaborerDashboardLayout><RatingsProfile /></LaborerDashboardLayout>;
+    } else if (user.user_type === 'admin') {
+      return <AdminDashboardLayout><RatingsProfile /></AdminDashboardLayout>;
+    }
+  }
+  // If not authenticated, or user type does not match a specific dashboard, use PublicLayout
+  return <PublicLayout><RatingsProfile /></PublicLayout>;
+};
+
 
 // AppContent component to define all routes
 function AppContent() {
@@ -75,9 +106,9 @@ function AppContent() {
       {/* Public list of laborers - this route remains public */}
       <Route path="/laborers" element={<PublicLayout><LaborerList /></PublicLayout>} />
       <Route path="/job/:id" element={<PublicLayout><JobDetails /></PublicLayout>} /> {/* Public job details */}
-      {/* Public view of a specific Laborer's profile by ID. If logged-in laborer views self, use /profile route */}
+      {/* Public view of a specific Laborer's profile by ID. This route now uses the wrapper. */}
       <Route path="/laborers/:laborerId" element={
-        <PublicLayout><UserProfile /></PublicLayout> // This is for viewing other users' profiles publicly
+        <RatingsProfileRouteWrapper /> 
       } />
 
 

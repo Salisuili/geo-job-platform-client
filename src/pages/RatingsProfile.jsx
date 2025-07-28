@@ -15,7 +15,7 @@ import {
 } from 'react-bootstrap';
 
 import { useAuth } from '../contexts/AuthContext'; 
-import EmployerDashboardLayout from '../layouts/EmployerDashboardLayout';
+
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
 
@@ -189,7 +189,12 @@ function RatingsProfile() {
   }
 
   const profileName = laborerData.full_name || laborerData.username || 'Laborer';
-  const profilePic = laborerData.profile_picture_url || 'https://via.placeholder.com/80x80?text=NA';
+
+  // MODIFIED: Construct profilePic using API_BASE_URL for consistency
+  const profilePic = laborerData.profile_picture_url 
+    ? `${API_BASE_URL}${laborerData.profile_picture_url}` 
+    : 'https://via.placeholder.com/80x80?text=NA';
+
   const profileDescription = laborerData.bio || (laborerData.skills && laborerData.skills.length > 0 ? laborerData.skills.join(', ') : 'No description available.');
   const joinedDate = laborerData.createdAt ? `Joined in ${new Date(laborerData.createdAt).getFullYear()}` : 'N/A';
 
@@ -203,7 +208,6 @@ function RatingsProfile() {
 
 
   return (
-    <EmployerDashboardLayout>
 
     <Container className="my-4">
       <Row className="justify-content-center">
@@ -212,7 +216,7 @@ function RatingsProfile() {
           <Card className="mb-4 shadow-sm border-0">
             <Card.Body className="d-flex align-items-center">
               <img
-                src={profilePic}
+                src={profilePic} // This now correctly uses the constructed URL
                 alt={profileName}
                 className="rounded-circle me-3"
                 style={{ width: '80px', height: '80px', objectFit: 'cover' }}
@@ -298,9 +302,9 @@ function RatingsProfile() {
                   </Form.Group>
                   {/* If job_id is required, you'd add a selector here, e.g.: */}
                   {/* <Form.Group className="mb-3" controlId="jobId">
-                        <Form.Label>Associated Job (Optional):</Form.Label>
-                        <Form.Control type="text" placeholder="Enter Job ID" value={jobId} onChange={(e) => setJobId(e.target.value)} />
-                    </Form.Group> */}
+                          <Form.Label>Associated Job (Optional):</Form.Label>
+                          <Form.Control type="text" placeholder="Enter Job ID" value={jobId} onChange={(e) => setJobId(e.target.value)} />
+                      </Form.Group> */}
                   <Button variant="primary" type="submit" disabled={submitLoading}>
                     {submitLoading ? <Spinner as="span" animation="border" size="sm" role="status" aria-hidden="true" /> : 'Submit Rating'}
                   </Button>
@@ -309,9 +313,9 @@ function RatingsProfile() {
             </Card>
           )}
           {!isEmployer && (
-               <Alert variant="info" className="text-center mb-4 shadow-sm border-0">
-                   <p className="mb-0">Only logged-in employers can submit ratings for this laborer.</p>
-               </Alert>
+              <Alert variant="info" className="text-center mb-4 shadow-sm border-0">
+                 <p className="mb-0">Only logged-in employers can submit ratings for this laborer.</p>
+              </Alert>
           )}
 
 
@@ -325,7 +329,9 @@ function RatingsProfile() {
                 <Card.Body>
                   <div className="d-flex align-items-center mb-2">
                     <img
-                      src={review.reviewer?.profile_picture_url || 'https://via.placeholder.com/40x40?text=NA'}
+                      src={review.reviewer?.profile_picture_url 
+                        ? `${API_BASE_URL}${review.reviewer.profile_picture_url}` // MODIFIED: Construct reviewer pic URL
+                        : 'https://via.placeholder.com/40x40?text=NA'}
                       alt={review.reviewer?.full_name || 'Anonymous'}
                       className="rounded-circle me-2"
                       style={{ width: '40px', height: '40px', objectFit: 'cover' }}
@@ -356,7 +362,6 @@ function RatingsProfile() {
         </Col>
       </Row>
     </Container>
-    </EmployerDashboardLayout>
     // </div> // This closing div will be handled by Layout
   );
 }

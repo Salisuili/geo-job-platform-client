@@ -108,7 +108,7 @@ function LaborerDashboard() {
               </div>
               <p className="card-text fs-2 fw-bold text-dark">Explore</p>
               <p className="card-text text-muted">Find new opportunities that match your skills.</p>
-              <Link to="/find-work" className="btn btn-sm btn-outline-success mt-2">
+              <Link to="/" className="btn btn-sm btn-outline-success mt-2">
                 Browse Jobs
               </Link>
             </Card.Body>
