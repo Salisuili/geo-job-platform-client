@@ -1,8 +1,9 @@
 // src/pages/admin/AdminEditEmployer.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Form, Button, Spinner, Alert, Card } from 'react-bootstrap';
+import { Container, Form, Button, Spinner, Alert, Card, InputGroup } from 'react-bootstrap';
 import { useAuth } from '../../contexts/AuthContext';
+import { FaEye, FaEyeSlash } from 'react-icons/fa'; // Import icons for password visibility
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
 
@@ -19,6 +20,9 @@ function AdminEditEmployer() {
         company_description: '',
         user_type: 'employer' // Should remain 'employer' for this page
     });
+    const [password, setPassword] = useState(''); // New state for the password field
+    const [showPassword, setShowPassword] = useState(false); // State for password visibility
+
     const [loading, setLoading] = useState(true); // Local loading state for data fetch
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
@@ -58,6 +62,8 @@ function AdminEditEmployer() {
                 company_description: data.company_description || '',
                 user_type: data.user_type || 'employer'
             });
+            // Password field is not pre-filled for security reasons
+            setPassword('');
         } catch (err) {
             setError(err.message || 'Failed to fetch employer data.');
             console.error("Error fetching employer:", err);
@@ -77,12 +83,6 @@ function AdminEditEmployer() {
             setError('You are not authorized to view this page. Please log in as an admin.');
             setLoading(false); // Stop local loading
         }
-        // Dependencies for this useEffect:
-        // - id: changes when navigating to a different employer
-        // - token: changes on login/logout
-        // - user: changes when auth state changes (e.g., user object becomes available)
-        // - authLoading: ensures we wait for auth context to initialize
-        // - fetchEmployer: a stable useCallback, so it won't cause infinite loops itself
     }, [id, token, user, authLoading, fetchEmployer]);
 
 
@@ -106,6 +106,16 @@ function AdminEditEmployer() {
             return;
         }
 
+        const dataToUpdate = { ...employerData };
+        if (password) { // Only add password to payload if it's not empty
+            if (password.length < 6) {
+                setError('New password must be at least 6 characters long.');
+                setSubmitting(false);
+                return;
+            }
+            dataToUpdate.password = password;
+        }
+
         try {
             const response = await fetch(`${API_BASE_URL}/api/admin/employers/${id}`, {
                 method: 'PUT',
@@ -113,7 +123,7 @@ function AdminEditEmployer() {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(employerData)
+                body: JSON.stringify(dataToUpdate) // Send updated data including password if provided
             });
 
             if (!response.ok) {
@@ -123,6 +133,7 @@ function AdminEditEmployer() {
 
             const data = await response.json();
             setSuccess(data.message || 'Employer updated successfully!');
+            setPassword(''); // Clear password field on success
             // Optionally navigate back after a short delay
             setTimeout(() => navigate('/admin/employers'), 2000);
         } catch (err) {
@@ -229,21 +240,28 @@ function AdminEditEmployer() {
                         />
                     </Form.Group>
 
-                    {/* Admin can potentially change user_type, though it's usually fixed for employer edit */}
-                    {/* <Form.Group className="mb-3" controlId="user_type">
-                        <Form.Label>User Type</Form.Label>
-                        <Form.Control
-                            as="select"
-                            name="user_type"
-                            value={employerData.user_type}
-                            onChange={handleChange}
-                            required
-                        >
-                            <option value="employer">Employer</option>
-                            <option value="laborer">Laborer</option>
-                            <option value="admin">Admin</option>
-                        </Form.Control>
-                    </Form.Group> */}
+                    {/* New Password Field */}
+                    <Form.Group className="mb-4" controlId="password">
+                        <Form.Label>New Password (Leave blank to keep current)</Form.Label>
+                        <InputGroup>
+                            <Form.Control
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="Enter new password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+                            <Button
+                                variant="outline-secondary"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                            </Button>
+                        </InputGroup>
+                        <Form.Text className="text-muted">
+                            Enter a new password if you wish to change it. Minimum 6 characters.
+                        </Form.Text>
+                    </Form.Group>
+
 
                     <Button variant="primary" type="submit" disabled={submitting}>
                         {submitting ? <Spinner animation="border" size="sm" className="me-2" /> : 'Save Changes'}

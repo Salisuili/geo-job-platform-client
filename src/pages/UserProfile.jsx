@@ -278,7 +278,7 @@ function UserProfile() {
             </Card.Body>
           </Card>
 
-          {/* Edit Profile Modal */}
+          {/* Edit Profile Modal */} 
           {profileData && (
             <EditProfileModal
               show={showEditModal}

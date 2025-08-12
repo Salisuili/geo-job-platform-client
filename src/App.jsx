@@ -49,9 +49,6 @@ const PrivateRoute = ({ children, allowedRoles }) => {
     return <Navigate to="/login" replace />;
   }
 
-  // This check is generally safe here because isAuthenticated should be true if we reach here
-  // and AuthContext ensures user is not null if isAuthenticated is true.
-  // However, for absolute robustness and clarity, an explicit check doesn't hurt.
   if (!user) {
     return <Navigate to="/login" replace />;
   }
@@ -78,15 +75,10 @@ const RatingsProfileRouteWrapper = () => {
     );
   }
 
-  // *** IMPORTANT CHANGE HERE ***
-  // If user is null (meaning not logged in or just logged out), render RatingsProfile within PublicLayout.
-  // This explicitly handles the case where isAuthenticated might be false or user is null.
   if (!user) {
     return <PublicLayout><RatingsProfile /></PublicLayout>;
   }
 
-  // If we reach here, 'user' is guaranteed not null (and 'loading' is false).
-  // Now, it's safe to check user.user_type to determine the appropriate layout.
   if (user.user_type === 'employer') {
     return <EmployerDashboardLayout><RatingsProfile /></EmployerDashboardLayout>;
   } else if (user.user_type === 'laborer') {
@@ -111,7 +103,7 @@ function AppContent() {
       <Route path="/" element={<PublicLayout><Home /></PublicLayout>} />
       <Route path="/login" element={<PublicLayout><LoginPage /></PublicLayout>} />
       <Route path="/signup" element={<PublicLayout><SignupPage /></PublicLayout>} />
-      <Route path="/jobs" element={<PublicLayout><Home /></PublicLayout>} /> {/* Assuming Home also lists jobs publicly */}
+      <Route path="/jobs" element={<PublicLayout><Home /></PublicLayout>} /> 
       <Route path="/services" element={<PublicLayout><div>Services Page Content</div></PublicLayout>} />
       <Route path="/about" element={<PublicLayout><div>About Us Page Content</div></PublicLayout>} />
       {/* Public list of laborers - this route remains public */}
@@ -261,24 +253,24 @@ function AppContent() {
           <AdminDashboardLayout><AdminLaborerList /></AdminDashboardLayout>
         </PrivateRoute>
       } />
-      {/* Admin's route for editing a laborer */}
-      <Route path="/admin/laborers/edit/:id" element={
-        <PrivateRoute allowedRoles={['admin']}>
-          <AdminDashboardLayout><AdminEditLaborer /></AdminDashboardLayout>
-        </PrivateRoute>
-      } />
+       {/* Admin's route for editing a laborer */}
+       <Route path="/admin/laborers/edit/:id" element={
+         <PrivateRoute allowedRoles={['admin']}>
+           <AdminDashboardLayout><AdminEditLaborer /></AdminDashboardLayout>
+         </PrivateRoute>
+       } />
       {/* Admin's view of EmployerList */}
       <Route path="/admin/employers" element={
         <PrivateRoute allowedRoles={['admin']}>
           <AdminDashboardLayout><AdminEmployerList /></AdminDashboardLayout>
         </PrivateRoute>
       } />
-      {/* Admin's route for editing an employer */}
-      <Route path="/admin/employers/edit/:id" element={
-        <PrivateRoute allowedRoles={['admin']}>
-          <AdminDashboardLayout><AdminEditEmployer /></AdminDashboardLayout>
-        </PrivateRoute>
-      } />
+       {/* Admin's route for editing an employer */}
+       <Route path="/admin/employers/edit/:id" element={
+         <PrivateRoute allowedRoles={['admin']}>
+           <AdminDashboardLayout><AdminEditEmployer /></AdminDashboardLayout>
+         </PrivateRoute>
+       } />
       <Route path="/admin/job-listings" element={
         <PrivateRoute allowedRoles={['admin']}>
           <AdminDashboardLayout><AdminJobListings /></AdminDashboardLayout>
@@ -290,12 +282,12 @@ function AppContent() {
           <AdminDashboardLayout><AdminEditJob /></AdminDashboardLayout>
         </PrivateRoute>
       } />
-      {/* NEW: Admin's own profile page */}
-      <Route path="/admin/profile" element={
-        <PrivateRoute allowedRoles={['admin']}>
-          <AdminDashboardLayout><AdminProfile /></AdminDashboardLayout>
-        </PrivateRoute>
-      } />
+       {/* Admin's own profile page */}
+       <Route path="/admin/profile" element={
+         <PrivateRoute allowedRoles={['admin']}>
+           <AdminDashboardLayout><AdminProfile /></AdminDashboardLayout>
+         </PrivateRoute>
+       } />
       <Route path="/admin/jobs" element={
         <PrivateRoute allowedRoles={['admin']}>
           <AdminDashboardLayout><div>Admin Jobs Management</div></AdminDashboardLayout>

@@ -95,9 +95,7 @@ const Login = () => {
             </div>
 
             <div className="mb-3 text-end">
-              <Link to="/forgot-password" className="text-decoration-underline text-muted small">
-                Forgot password?
-              </Link>
+             
             </div>
 
             <div className="d-grid">

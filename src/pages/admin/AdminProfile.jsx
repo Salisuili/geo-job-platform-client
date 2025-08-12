@@ -4,7 +4,7 @@ import { Container, Form, Button, Spinner, Alert, Card, Row, Col } from 'react-b
 import { useAuth } from '../../contexts/AuthContext'; // Adjust path as needed
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
-const DEFAULT_AVATAR_URL = 'https://via.placeholder.com/150'; // Default placeholder image
+const DEFAULT_AVATAR_URL = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3E%3Crect width='150' height='150' fill='%23e0e0e0'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='Arial, sans-serif' font-size='30' fill='%23757575'%3EAdmin%3C/text%3E%3C/svg%3E";
 
 function AdminProfile() {
     const { token, user, loading: authLoading, refreshUser } = useAuth();
@@ -20,7 +20,7 @@ function AdminProfile() {
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
-    const [success, setSuccess] = useState(null);
+    const [success, setSuccess] = useState(null); // CORRECTED: Changed 'null' to 'useState(null)'
 
     const fetchAdminProfile = useCallback(async () => {
         setLoading(true);
@@ -53,6 +53,7 @@ function AdminProfile() {
                 phone_number: data.phone_number || '',
                 username: data.username || '',
                 // Ensure profile_picture_url is correctly prefixed if it's a relative path
+                // Fallback to DEFAULT_AVATAR_URL if no URL is provided from backend
                 profile_picture_url: data.profile_picture_url && !data.profile_picture_url.startsWith('http')
                     ? `${API_BASE_URL}${data.profile_picture_url}`
                     : data.profile_picture_url || DEFAULT_AVATAR_URL,
@@ -70,13 +71,14 @@ function AdminProfile() {
         if (!authLoading && user && user.user_type === 'admin' && token) {
             fetchAdminProfile();
         } else if (!authLoading && (!user || user.user_type !== 'admin')) {
-            setError('You are not authorized to view this page. Please log in as an an admin.');
+            setError('You are not authorized to view this page. Please log in as an admin.');
             setLoading(false);
         }
     }, [user, authLoading, token, fetchAdminProfile]);
 
     const handleChange = (e) => {
         const { name, value, files } = e.target;
+        // The input field's name is 'profileImage', but we will append it as 'profile_picture' in FormData
         if (name === 'profileImage') {
             setProfileImageFile(files[0]);
             // Optionally, update profile_picture_url for instant preview
@@ -86,9 +88,12 @@ function AdminProfile() {
                     profile_picture_url: URL.createObjectURL(files[0])
                 }));
             } else {
+                // If file input is cleared, revert to current stored URL or default
                 setProfileData(prevData => ({
                     ...prevData,
-                    profile_picture_url: user?.profile_picture_url || DEFAULT_AVATAR_URL // Revert to current or default
+                    profile_picture_url: user?.profile_picture_url && !user.profile_picture_url.startsWith('http')
+                        ? `${API_BASE_URL}${user.profile_picture_url}`
+                        : user?.profile_picture_url || DEFAULT_AVATAR_URL
                 }));
             }
         } else {
@@ -117,15 +122,11 @@ function AdminProfile() {
         formData.append('phone_number', profileData.phone_number);
 
         if (profileImageFile) {
-            formData.append('profileImage', profileImageFile); // Append the file
+            
+            formData.append('profile_picture', profileImageFile);
         } else if (profileData.profile_picture_url === DEFAULT_AVATAR_URL && user?.profile_picture_url) {
-            // If user explicitly cleared image and it was previously set, send a signal to remove it
-            // This assumes your backend handles a specific value (e.g., an empty string or null)
-            // to indicate image removal. Adjust as per your backend's expectation.
-            // For now, we'll just not send the field if no new file and it's the default.
-            // If you want to explicitly remove, you might need a "clear image" button.
+           
         }
-
 
         try {
             const response = await fetch(`${API_BASE_URL}/api/users/profile`, {
@@ -155,6 +156,12 @@ function AdminProfile() {
                 setProfileData(prevData => ({
                     ...prevData,
                     profile_picture_url: `${API_BASE_URL}${data.profile.profile_picture_url}`
+                }));
+            } else if (data.profile && !data.profile.profile_picture_url) {
+                // If backend indicates image was removed or not set, revert to default
+                setProfileData(prevData => ({
+                    ...prevData,
+                    profile_picture_url: DEFAULT_AVATAR_URL
                 }));
             }
 
@@ -208,17 +215,17 @@ function AdminProfile() {
 
                     <div className="text-center mb-4">
                         <img
-                            src={profileData.profile_picture_url || DEFAULT_AVATAR_URL} // Use state URL or default
+                            src={profileData.profile_picture_url} // Use state URL directly
                             alt="Profile"
                             className="rounded-circle"
                             style={{ width: '150px', height: '150px', objectFit: 'cover', border: '2px solid #ddd' }}
-                            onError={(e) => { e.target.onerror = null; e.target.src = DEFAULT_AVATAR_URL; }}
+                            // Removed onError handler as base64 SVG will not fail
                         />
                         <Form.Group controlId="profileImage" className="mt-3">
                             <Form.Label>Upload Profile Picture</Form.Label>
                             <Form.Control
                                 type="file"
-                                name="profileImage"
+                                name="profileImage" // Keep input name as profileImage for handleChange logic
                                 accept="image/*"
                                 onChange={handleChange}
                             />

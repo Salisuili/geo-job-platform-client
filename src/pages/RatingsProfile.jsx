@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import { FaStar } from 'react-icons/fa'; // Only FaStar is needed now
+import { FaStar, FaEdit } from 'react-icons/fa'; // Added FaEdit for the button icon
 import {
   Container,
   Spinner,
@@ -15,7 +15,7 @@ import {
 } from 'react-bootstrap';
 
 import { useAuth } from '../contexts/AuthContext';
-
+import EditProfileModal from '../components/EditProfileModal'; // Import the EditProfileModal
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
 
@@ -50,6 +50,16 @@ function RatingsProfile() {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+
+  // State for the EditProfileModal
+  const [showEditModal, setShowEditModal] = useState(false);
+  const handleShowEditModal = () => setShowEditModal(true);
+  const handleCloseEditModal = () => {
+    setShowEditModal(false);
+    // Optionally re-fetch profile data when modal closes after saving
+    fetchLaborerProfile();
+  };
+
 
   const fetchLaborerProfile = async () => {
     setLoading(true);
@@ -150,12 +160,6 @@ function RatingsProfile() {
     }
   };
 
-  console.log("RatingsProfile State: User:", user, "isAuthenticated:", isAuthenticated, "authLoading:", authLoading, "LaborerDataLoading:", loading);
-
-  // --- Start: Crucial Render Order for Authentication ---
-
-  // 1. If authentication state is still being loaded, show a general loading indicator.
-  // This is the most important check to prevent accessing 'user' prematurely.
   if (authLoading) {
     return (
       <Container className="my-5 text-center">
@@ -229,18 +233,26 @@ function RatingsProfile() {
         <Col lg={8}>
           {/* Laborer Profile Card */}
           <Card className="mb-4 shadow-sm border-0">
-            <Card.Body className="d-flex align-items-center">
-              <img
-                src={profilePic}
-                alt={profileName}
-                className="rounded-circle me-3"
-                style={{ width: '80px', height: '80px', objectFit: 'cover' }}
-              />
-              <div>
-                <h4 className="mb-0">{profileName}</h4>
-                <p className="text-muted mb-0" style={{ fontSize: '0.95rem' }}>{profileDescription}</p>
-                <p className="text-muted" style={{ fontSize: '0.9rem' }}>{joinedDate}</p>
+            <Card.Body className="d-flex align-items-center justify-content-between"> {/* Added justify-content-between */}
+              <div className="d-flex align-items-center">
+                <img
+                  src={profilePic}
+                  alt={profileName}
+                  className="rounded-circle me-3"
+                  style={{ width: '80px', height: '80px', objectFit: 'cover' }}
+                />
+                <div>
+                  <h4 className="mb-0">{profileName}</h4>
+                  <p className="text-muted mb-0" style={{ fontSize: '0.95rem' }}>{profileDescription}</p>
+                  <p className="text-muted" style={{ fontSize: '0.9rem' }}>{joinedDate}</p>
+                </div>
               </div>
+              {/* Edit Profile Button (Visible only to the laborer viewing their own profile) */}
+              {isAuthenticated && isLaborerSelf && (
+                <Button variant="outline-primary" onClick={handleShowEditModal} className="ms-auto">
+                  <FaEdit className="me-1" /> Edit Profile
+                </Button>
+              )}
             </Card.Body>
           </Card>
 
@@ -360,13 +372,22 @@ function RatingsProfile() {
                     ))}
                   </div>
                   <Card.Text className="mb-3">{review.comment || 'No comment provided.'}</Card.Text>
-                  {/* The thumbs-up/thumbs-down section has been removed */}
                 </Card.Body>
               </Card>
             ))
           )}
         </Col>
       </Row>
+
+      {/* Edit Profile Modal */}
+      {laborerData && isLaborerSelf && (
+        <EditProfileModal
+          show={showEditModal}
+          handleClose={handleCloseEditModal}
+          profileData={laborerData} // Pass the fetched laborer data
+          onSaveSuccess={fetchLaborerProfile} // Re-fetch data on successful save
+        />
+      )}
     </Container>
   );
 }

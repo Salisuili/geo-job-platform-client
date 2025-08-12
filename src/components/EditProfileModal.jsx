@@ -12,7 +12,7 @@ function EditProfileModal({ show, handleClose, profileData, onSaveSuccess }) {
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
-    phone_number: '',
+    phone_number: '', 
     bio: '',
     hourly_rate: '',
     skills: '', // Will be a comma-separated string for input

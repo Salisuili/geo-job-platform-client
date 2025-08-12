@@ -1,8 +1,9 @@
 // src/pages/admin/AdminEditLaborer.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Container, Form, Button, Spinner, Alert, Card, Row, Col } from 'react-bootstrap';
+import { Container, Form, Button, Spinner, Alert, Card, Row, Col, InputGroup } from 'react-bootstrap';
 import { useAuth } from '../../contexts/AuthContext';
+import { FaEye, FaEyeSlash } from 'react-icons/fa'; // Import icons for password visibility
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
 
@@ -21,6 +22,9 @@ function AdminEditLaborer() {
         skills: [],
         user_type: 'laborer' // Should remain 'laborer' for this page
     });
+    const [password, setPassword] = useState(''); // New state for the password field
+    const [showPassword, setShowPassword] = useState(false); // State for password visibility
+
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState(null);
@@ -62,6 +66,8 @@ function AdminEditLaborer() {
                 skills: Array.isArray(data.skills) ? data.skills.join(', ') : '', // Convert array to comma-separated string
                 user_type: data.user_type || 'laborer'
             });
+            // Password field is not pre-filled for security reasons
+            setPassword('');
         } catch (err) {
             setError(err.message || 'Failed to fetch laborer data.');
             console.error("Error fetching laborer:", err);
@@ -99,12 +105,21 @@ function AdminEditLaborer() {
             return;
         }
 
-        try {
-            const payload = {
-                ...laborerData,
-                skills: laborerData.skills.split(',').map(s => s.trim()).filter(s => s !== '') // Convert string to array
-            };
+        const payload = {
+            ...laborerData,
+            skills: laborerData.skills.split(',').map(s => s.trim()).filter(s => s !== '') // Convert string to array
+        };
 
+        if (password) { // Only add password to payload if it's not empty
+            if (password.length < 6) {
+                setError('New password must be at least 6 characters long.');
+                setSubmitting(false);
+                return;
+            }
+            payload.password = password;
+        }
+
+        try {
             const response = await fetch(`${API_BASE_URL}/api/admin/laborers/${id}`, {
                 method: 'PUT',
                 headers: {
@@ -121,6 +136,7 @@ function AdminEditLaborer() {
 
             const data = await response.json();
             setSuccess(data.message || 'Laborer updated successfully!');
+            setPassword(''); // Clear password field on success
             setTimeout(() => navigate('/admin/laborers'), 2000);
         } catch (err) {
             setError(err.message || 'Failed to update laborer.');
@@ -252,6 +268,28 @@ function AdminEditLaborer() {
                             checked={laborerData.is_available}
                             onChange={handleChange}
                         />
+                    </Form.Group>
+
+                    {/* New Password Field */}
+                    <Form.Group className="mb-4" controlId="password">
+                        <Form.Label>New Password (Leave blank to keep current)</Form.Label>
+                        <InputGroup>
+                            <Form.Control
+                                type={showPassword ? 'text' : 'password'}
+                                placeholder="Enter new password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+                            <Button
+                                variant="outline-secondary"
+                                onClick={() => setShowPassword(!showPassword)}
+                            >
+                                {showPassword ? <FaEyeSlash /> : <FaEye />}
+                            </Button>
+                        </InputGroup>
+                        <Form.Text className="text-muted">
+                            Enter a new password if you wish to change it. Minimum 6 characters.
+                        </Form.Text>
                     </Form.Group>
 
                     <Button variant="primary" type="submit" disabled={submitting}>

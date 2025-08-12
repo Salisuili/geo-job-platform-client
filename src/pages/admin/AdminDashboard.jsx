@@ -95,12 +95,7 @@ function AdminDashboard() {
         }
     }, [user, authLoading, fetchAdminData]);
 
-    const handleViewAction = (userId) => {
-        console.log(`View action clicked for user ID: ${userId}`);
-        // Implement navigation to user detail page or modal here
-        // navigate(`/admin/users/${userId}`);
-    };
-
+   
     if (authLoading || loadingData) {
         return (
             <div className="d-flex justify-content-center align-items-center" style={{ minHeight: '300px' }}>
@@ -170,7 +165,7 @@ function AdminDashboard() {
                                             <th>Username</th>
                                             <th>Email</th>
                                             <th>Role</th>
-                                            <th>Actions</th>
+                                           
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -182,13 +177,7 @@ function AdminDashboard() {
                                                     <td>{userItem.email}</td>
                                                     <td>{userItem.user_type}</td>
                                                     <td>
-                                                        <Button
-                                                            variant="outline-primary"
-                                                            size="sm"
-                                                            onClick={() => handleViewAction(userItem._id)}
-                                                        >
-                                                            View
-                                                        </Button>
+                                                       
                                                     </td>
                                                 </tr>
                                             ))
