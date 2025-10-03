@@ -3,12 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { FaChevronLeft, FaChevronRight, FaFilter, FaMapMarkerAlt, FaSyncAlt } from 'react-icons/fa';
 import { Container, Form, Button, Card, Accordion, Row, Col, Pagination as BSPagination, Offcanvas, Alert } from 'react-bootstrap';
+// Assuming useAuth is available in your environment, same as Login.jsx
+import { useAuth } from '../contexts/AuthContext'; 
 
 const API_BASE_URL = process.env.REACT_APP_BACKEND_API_URL;
 const DEFAULT_JOB_IMAGE_PATH = '/uploads/geo_job_default.jpg';
 
 // Define FilterForm outside the Home component or memoize it correctly.
-// We will memoize it here.
 const FilterForm = React.memo(({
     filterLocationInput, handleLocationInputChange,
     filterMinPayInput, handleMinPayInputChange,
@@ -158,6 +159,7 @@ const FilterForm = React.memo(({
 
 function Home() {
     const navigate = useNavigate();
+    const { user, token, isAuthenticated } = useAuth(); // Destructure user and token from AuthContext
     const [jobs, setJobs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -180,6 +182,7 @@ function Home() {
     const [userCityState, setUserCityState] = useState('');
     const [isLocationBasedSearch, setIsLocationBasedSearch] = useState(true);
     const [locationError, setLocationError] = useState(null);
+    const [locationUpdated, setLocationUpdated] = useState(false); // New state to prevent multiple updates
 
     // Pagination States
     const [currentPage, setCurrentPage] = useState(1);
@@ -195,6 +198,41 @@ function Home() {
     const locationDebounceRef = useRef(null);
     const minPayDebounceRef = useRef(null);
     const maxPayDebounceRef = useRef(null);
+    
+    /**
+     * Updates the user's location (coordinates and city) on the backend.
+     */
+    const updateBackendLocation = useCallback(async (lat, long, city) => {
+        if (!isAuthenticated || user.user_type !== 'laborer' || !token || locationUpdated) {
+            return;
+        }
+
+        try {
+            const updateResponse = await fetch(`${API_BASE_URL}/api/users/${user._id}/location`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ 
+                    latitude: lat, 
+                    longitude: long, 
+                    city 
+                }),
+            });
+
+            if (updateResponse.ok) {
+                console.log("Laborer location updated on backend successfully from Home.jsx.");
+                setLocationUpdated(true);
+            } else {
+                const errorData = await updateResponse.json();
+                console.error("Failed to update location on backend from Home.jsx:", errorData.message);
+            }
+        } catch (err) {
+            console.error("Network error during location update from Home.jsx:", err);
+        }
+    }, [isAuthenticated, user, token, locationUpdated]); // Added locationUpdated as dependency
+
 
     const getUserLocation = useCallback(async () => {
         setLocationError(null);
@@ -204,11 +242,13 @@ function Home() {
                     const { latitude, longitude } = position.coords;
                     setUserCoords({ latitude, longitude });
 
+                    let city = '';
                     try {
+                        // Reverse Geocode
                         const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
                         const data = await response.json();
                         if (data.address) {
-                            const city = data.address.city || data.address.town || data.address.village || '';
+                            city = data.address.city || data.address.town || data.address.village || '';
                             const state = data.address.state || '';
                             setUserCityState(`${city}${city && state ? ', ' : ''}${state}`);
                         } else {
@@ -218,7 +258,13 @@ function Home() {
                         console.error("Reverse geocoding error:", geoError);
                         setUserCityState('your location');
                     }
+                    
                     setIsLocationBasedSearch(true);
+                    
+                    // NEW: Update backend location if user is a laborer and hasn't been updated this session
+                    if (user && user.user_type === 'laborer') {
+                        updateBackendLocation(latitude, longitude, city);
+                    }
                 },
                 (error) => {
                     console.error("Error getting user location:", error);
@@ -241,9 +287,11 @@ function Home() {
             setUserCoords({ latitude: null, longitude: null });
             setUserCityState('');
         }
-    }, []);
+    }, [user, updateBackendLocation]); // Added user and updateBackendLocation as dependencies
 
+    // Initial load effect
     useEffect(() => {
+        // Reset locationUpdated state on initial mount if needed, though this is likely fine.
         getUserLocation();
     }, [getUserLocation]);
 
@@ -310,7 +358,15 @@ function Home() {
             if (filterPayType) params.append('payType', filterPayType);
             params.append('page', currentPage);
             params.append('limit', itemsPerPage);
-            const response = await fetch(`${API_BASE_URL}/api/jobs?${params.toString()}`);
+            
+            // Include Authorization header if available (important for personalized content, even if basic search)
+            const headers = {};
+            if (token) {
+                headers['Authorization'] = `Bearer ${token}`;
+            }
+
+            const response = await fetch(`${API_BASE_URL}/api/jobs?${params.toString()}`, { headers });
+            
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
             setJobs(data.jobs || []);
@@ -321,7 +377,7 @@ function Home() {
         } finally {
             setLoading(false);
         }
-    }, [filterLocation, filterJobType, filterDatePosted, filterMinPay, filterMaxPay, filterPayType, currentPage, itemsPerPage, userCoords, isLocationBasedSearch]);
+    }, [filterLocation, filterJobType, filterDatePosted, filterMinPay, filterMaxPay, filterPayType, currentPage, itemsPerPage, userCoords, isLocationBasedSearch, token]);
 
     // This useEffect will now properly react to changes in *debounced* filter states
     // and other non-debounced filter states
@@ -384,7 +440,7 @@ function Home() {
         setCurrentPage(1);
         handleCloseOffcanvasFilters();
         // No explicit fetchJobs() call needed here as state updates will trigger it
-    }, [handleCloseOffcanvasFilters]); // Added handleCloseOffcanvasFilters as dependency
+    }, []); 
 
     // Handler for clearing filters
     const handleClearFilters = useCallback(() => {
@@ -400,7 +456,7 @@ function Home() {
         setCurrentPage(1);
         getUserLocation(); // Re-enable location-based search
         handleCloseOffcanvasFilters();
-    }, [getUserLocation, handleCloseOffcanvasFilters]); // Added getUserLocation and handleCloseOffcanvasFilters as dependencies
+    }, [getUserLocation]); 
 
 
     // Handler for viewing job details
